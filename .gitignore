@@ -1,5 +1,10 @@
 rabbits/.idea/
 rabbits/sciper1-sciper2/out/
+rabbits/sciper1-sciper2/bin/
+rabbits/sciper1-sciper2/.settings/
 *.aux
 *.log
 *.gz
+rabbits/report_rabbits.pdf
+rabbits/sciper1-sciper2/.project
+rabbits/sciper1-sciper2/.classpath
