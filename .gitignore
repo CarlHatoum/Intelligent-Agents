@@ -1,0 +1,5 @@
+rabbits/.idea/
+rabbits/sciper1-sciper2/out/
+*.aux
+*.log
+*.gz
