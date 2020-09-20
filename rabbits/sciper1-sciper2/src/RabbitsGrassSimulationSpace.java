@@ -1,3 +1,4 @@
+import uchicago.src.sim.space.Discrete2DSpace;
 import uchicago.src.sim.space.Object2DGrid;
 
 /**
@@ -7,10 +8,12 @@ import uchicago.src.sim.space.Object2DGrid;
 
 public class RabbitsGrassSimulationSpace {
     private Object2DGrid grassSpace;
+    private Object2DGrid rabbitSpace;
     private int maxGrassPerCell;
 
 
     public RabbitsGrassSimulationSpace(int gridSize, int maxGrassPerCell){
+        rabbitSpace = new Object2DGrid(gridSize, gridSize);
         grassSpace = new Object2DGrid(gridSize, gridSize);
         for(int i = 0; i < gridSize; i++){
             for(int j = 0; j < gridSize; j++){
@@ -42,5 +45,25 @@ public class RabbitsGrassSimulationSpace {
 
     public Object2DGrid getCurrentGrassSpace(){
         return grassSpace;
+    }
+
+    public Object2DGrid getCurrentRabbitSpace() {
+        return rabbitSpace;
+    }
+
+    public boolean cellIsOccupied(int x, int y){
+        return rabbitSpace.getObjectAt(x, y) != null;
+    }
+
+    public boolean addRabbit(RabbitsGrassSimulationAgent rabbit, int x, int y){
+        if (0 <= x && x < rabbitSpace.getSizeX() && 0 <= y && y < rabbitSpace.getSizeY()){
+            if(!cellIsOccupied(x,y)){
+                rabbitSpace.putObjectAt(x, y, rabbit);
+                rabbit.setXY(x, y);
+                rabbit.setSpace(this);
+                return true;
+            }
+        }
+        return false;
     }
 }
