@@ -19,15 +19,13 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 	private int y;
 	private int energy;
 	private static int IDNumber = 0;
+	private static int maxEnergy = 20;
+	private static int minEnergy = 0;
 	private int ID;
 	private RabbitsGrassSimulationSpace space;
 	
-	public RabbitsGrassSimulationAgent(int maxEnergy, int minEnergy){
-		/**
-		 * Constructor to be implemented
-		 * x y random ?
-		 * Fixed initial energy ?
-		 */
+	public RabbitsGrassSimulationAgent(){
+		
 		energy = (int)((Math.random() * (maxEnergy - minEnergy)) + minEnergy);
 	    IDNumber++;
 	    ID = IDNumber;
@@ -86,7 +84,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         setXY(newX, newY);
         energy--;
       }
- 
     }
 
     public void setSpace(RabbitsGrassSimulationSpace space) {
