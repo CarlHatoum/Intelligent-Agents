@@ -23,9 +23,9 @@ import java.util.ArrayList;
 
 public class RabbitsGrassSimulationModel extends SimModelImpl {
 	private static final int GRID_SIZE = 20;
-	private static final int NUM_INIT_RABBITS = 50;
+	private static final int NUM_INIT_RABBITS = 20;
 	private static final int NUM_INIT_GRASS = 100;
-	private static final int GRASS_GROWTH_RATE = 0;
+	private static final int GRASS_GROWTH_RATE = 1;
 	private static final int BIRTH_THRESHOLD = 0;
 	private static final int MAX_GRASS_PER_CELL = 1;
 
@@ -65,7 +65,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
 	public void buildModel(){
     	space = new RabbitsGrassSimulationSpace(gridSize, maxGrassPerCell);
-    	space.initGrass(numInitGrass);
+    	space.spreadGrass(numInitGrass);
 
 		for(int i = 0; i < numInitRabbits; i++){
 			addNewRandomRabbit();
@@ -76,21 +76,27 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	}
 
 	private void addNewRandomRabbit(){
-		RabbitsGrassSimulationAgent newRabbit = new RabbitsGrassSimulationAgent();
-
 		int countLimit = 10 * gridSize^2;
 		boolean foundFreeCell = false;
 		int count = 0;
 		while(!foundFreeCell && count < countLimit){
 			int x = (int)(Math.random()*gridSize);
 			int y = (int)(Math.random()*gridSize);
-			if(space.addRabbit(newRabbit, x, y)){
+			if(addNewRabbit(x, y)){
 				foundFreeCell = true;
 			}
 			count++;
 		}
 
-		rabbitList.add(newRabbit);
+	}
+
+	private boolean addNewRabbit(int x, int y){
+		RabbitsGrassSimulationAgent newRabbit = new RabbitsGrassSimulationAgent();
+		if(space.addRabbit(newRabbit, x, y)){
+			rabbitList.add(newRabbit);
+			return true;
+		}
+		else return false;
 	}
 
 	public void buildSchedule(){
@@ -98,8 +104,15 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			public void execute() {
 			}
 		}
-
 		schedule.scheduleActionBeginning(0, new SimulationpStep());
+
+		class GrassGrowth extends BasicAction {
+			public void execute() {
+				space.spreadGrass(grassGrowthRate);
+				displaySurf.updateDisplay();
+			}
+		}
+		schedule.scheduleActionBeginning(0, new GrassGrowth());
 	}
 
 	public void buildDisplay(){

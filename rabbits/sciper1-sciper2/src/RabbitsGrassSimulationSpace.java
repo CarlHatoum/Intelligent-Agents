@@ -23,23 +23,25 @@ public class RabbitsGrassSimulationSpace {
         this.maxGrassPerCell = maxGrassPerCell;
     }
 
-    public void initGrass(int number){
+    public void spreadGrass(int number){
         int i = 0;
-        while (i < number){
-            int x = (int)(Math.random()*(grassSpace.getSizeX()));
-            int y = (int)(Math.random()*(grassSpace.getSizeY()));
+        int count = 0;
+        int countLimit = maxGrassPerCell * grassSpace.getSizeX() * grassSpace.getSizeY();
+        while (i < number && count<countLimit) {
+            int x = (int) (Math.random() * (grassSpace.getSizeX()));
+            int y = (int) (Math.random() * (grassSpace.getSizeY()));
 
             int I;
-            if(grassSpace.getObjectAt(x,y)!= null){
+            if (grassSpace.getObjectAt(x, y) != null) {
                 I = (Integer) grassSpace.getObjectAt(x, y);
-            }
-            else{
+            } else {
                 I = 0;
             }
-            if (I < maxGrassPerCell){
-                grassSpace.putObjectAt(x,y, I + 1);
+            if (I < maxGrassPerCell) {
+                grassSpace.putObjectAt(x, y, I + 1);
                 i++;
             }
+            count++;
         }
     }
 
