@@ -40,7 +40,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	private RabbitsGrassSimulationSpace space;
 	private DisplaySurface displaySurf;
 
-	private ArrayList rabbitList;
+	private ArrayList<RabbitsGrassSimulationAgent> rabbitList;
 
     public static void main(String[] args) {
 
@@ -100,11 +100,12 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	}
 
 	public void buildSchedule(){
-		class SimulationpStep extends BasicAction {
+		class SimulationStep extends BasicAction {
 			public void execute() {
+				//TODO
 			}
 		}
-		schedule.scheduleActionBeginning(0, new SimulationpStep());
+		schedule.scheduleActionBeginning(0, new SimulationStep());
 
 		class GrassGrowth extends BasicAction {
 			public void execute() {
@@ -118,8 +119,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	public void buildDisplay(){
 		ColorMap map = new ColorMap();
 
-		for(int i = 1; i<16; i++){
-			map.mapColor(i, new Color(0, (int)(256 - i * 12), 0));
+		for(int i = 1; i<=maxGrassPerCell; i++){
+			map.mapColor(i, new Color(0, Math.max(256 - i * 12, 50), 0));
 		}
 		map.mapColor(0, Color.white);
 
@@ -129,7 +130,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		Object2DDisplay displayRabbits = new Object2DDisplay(space.getCurrentRabbitSpace());
 		displayRabbits.setObjectList(rabbitList);
 
-		displaySurf.addDisplayable(displayMoney, "Grass");
+		displaySurf.addDisplayableProbeable(displayMoney, "Grass");
 		displaySurf.addDisplayableProbeable(displayRabbits, "Rabbits");
 	}
 
@@ -152,7 +153,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public void setup() {
         space = null;
-        rabbitList = new ArrayList();
+        rabbitList = new ArrayList<>();
 		schedule = new Schedule(1);
 
 		if (displaySurf != null){
