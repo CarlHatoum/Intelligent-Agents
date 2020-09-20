@@ -4,10 +4,12 @@ import uchicago.src.sim.engine.SimModelImpl;
 import uchicago.src.sim.engine.SimInit;
 import uchicago.src.sim.gui.ColorMap;
 import uchicago.src.sim.gui.DisplaySurface;
+import uchicago.src.sim.gui.Object2DDisplay;
 import uchicago.src.sim.gui.Value2DDisplay;
 import uchicago.src.sim.util.SimUtilities;
 
 import java.awt.*;
+import java.util.ArrayList;
 
 /**
  * Class that implements the simulation model for the rabbits grass
@@ -21,11 +23,11 @@ import java.awt.*;
 
 public class RabbitsGrassSimulationModel extends SimModelImpl {
 	private static final int GRID_SIZE = 20;
-	private static final int NUM_INIT_RABBITS = 0;
-	private static final int NUM_INIT_GRASS = 300;
+	private static final int NUM_INIT_RABBITS = 50;
+	private static final int NUM_INIT_GRASS = 100;
 	private static final int GRASS_GROWTH_RATE = 0;
 	private static final int BIRTH_THRESHOLD = 0;
-	private static final int MAX_GRASS_PER_CELL = 10;
+	private static final int MAX_GRASS_PER_CELL = 1;
 
     private int gridSize = GRID_SIZE;
     private int numInitRabbits = NUM_INIT_RABBITS;
@@ -37,6 +39,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	private Schedule schedule;
 	private RabbitsGrassSimulationSpace space;
 	private DisplaySurface displaySurf;
+
+	private ArrayList rabbitList;
 
     public static void main(String[] args) {
 
@@ -62,12 +66,36 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	public void buildModel(){
     	space = new RabbitsGrassSimulationSpace(gridSize, maxGrassPerCell);
     	space.initGrass(numInitGrass);
+
+		for(int i = 0; i < numInitRabbits; i++){
+			addNewRandomRabbit();
+		}
+//		for(int i = 0; i < rabbitList.size(); i++){
+//			RabbitsGrassSimulationAgent rabbit = (RabbitsGrassSimulationAgent)rabbitList.get(i);
+//		}
+	}
+
+	private void addNewRandomRabbit(){
+		RabbitsGrassSimulationAgent newRabbit = new RabbitsGrassSimulationAgent();
+
+		int countLimit = 10 * gridSize^2;
+		boolean foundFreeCell = false;
+		int count = 0;
+		while(!foundFreeCell && count < countLimit){
+			int x = (int)(Math.random()*gridSize);
+			int y = (int)(Math.random()*gridSize);
+			if(space.addRabbit(newRabbit, x, y)){
+				foundFreeCell = true;
+			}
+			count++;
+		}
+
+		rabbitList.add(newRabbit);
 	}
 
 	public void buildSchedule(){
 		class SimulationpStep extends BasicAction {
 			public void execute() {
-				System.out.println("test");
 			}
 		}
 
@@ -85,7 +113,11 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		Value2DDisplay displayMoney =
 				new Value2DDisplay(space.getCurrentGrassSpace(), map);
 
+		Object2DDisplay displayRabbits = new Object2DDisplay(space.getCurrentRabbitSpace());
+		displayRabbits.setObjectList(rabbitList);
+
 		displaySurf.addDisplayable(displayMoney, "Grass");
+		displaySurf.addDisplayableProbeable(displayRabbits, "Rabbits");
 	}
 
 
@@ -107,6 +139,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public void setup() {
         space = null;
+        rabbitList = new ArrayList();
 		schedule = new Schedule(1);
 
 		if (displaySurf != null){
