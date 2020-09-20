@@ -78,6 +78,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
       else{
         ///
       }
+      setXY(newX, newY);
       energy--;
     }
     
