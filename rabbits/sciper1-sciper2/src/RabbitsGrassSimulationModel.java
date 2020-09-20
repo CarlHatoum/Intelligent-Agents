@@ -1,7 +1,13 @@
+import uchicago.src.sim.engine.BasicAction;
 import uchicago.src.sim.engine.Schedule;
 import uchicago.src.sim.engine.SimModelImpl;
 import uchicago.src.sim.engine.SimInit;
+import uchicago.src.sim.gui.ColorMap;
 import uchicago.src.sim.gui.DisplaySurface;
+import uchicago.src.sim.gui.Value2DDisplay;
+import uchicago.src.sim.util.SimUtilities;
+
+import java.awt.*;
 
 /**
  * Class that implements the simulation model for the rabbits grass
@@ -16,15 +22,17 @@ import uchicago.src.sim.gui.DisplaySurface;
 public class RabbitsGrassSimulationModel extends SimModelImpl {
 	private static final int GRID_SIZE = 20;
 	private static final int NUM_INIT_RABBITS = 0;
-	private static final int NUM_INIT_GRASS = 0;
+	private static final int NUM_INIT_GRASS = 300;
 	private static final int GRASS_GROWTH_RATE = 0;
 	private static final int BIRTH_THRESHOLD = 0;
+	private static final int MAX_GRASS_PER_CELL = 10;
 
     private int gridSize = GRID_SIZE;
     private int numInitRabbits = NUM_INIT_RABBITS;
     private int numInitGrass = NUM_INIT_GRASS;
 	private int grassGrowthRate = GRASS_GROWTH_RATE;
 	private int birthThreshold = BIRTH_THRESHOLD;
+	private int maxGrassPerCell = MAX_GRASS_PER_CELL;
 
 	private Schedule schedule;
 	private RabbitsGrassSimulationSpace space;
@@ -41,7 +49,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             init.loadModel(model, "", false);
         else
             init.loadModel(model, args[0], Boolean.parseBoolean(args[1]));
-
     }
 
     public void begin() {
@@ -53,14 +60,32 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     }
 
 	public void buildModel(){
-    	space = new RabbitsGrassSimulationSpace(gridSize);
+    	space = new RabbitsGrassSimulationSpace(gridSize, maxGrassPerCell);
     	space.initGrass(numInitGrass);
 	}
 
 	public void buildSchedule(){
+		class SimulationpStep extends BasicAction {
+			public void execute() {
+				System.out.println("test");
+			}
+		}
+
+		schedule.scheduleActionBeginning(0, new SimulationpStep());
 	}
 
 	public void buildDisplay(){
+		ColorMap map = new ColorMap();
+
+		for(int i = 1; i<16; i++){
+			map.mapColor(i, new Color(0, (int)(256 - i * 12), 0));
+		}
+		map.mapColor(0, Color.white);
+
+		Value2DDisplay displayMoney =
+				new Value2DDisplay(space.getCurrentGrassSpace(), map);
+
+		displaySurf.addDisplayable(displayMoney, "Grass");
 	}
 
 
@@ -68,7 +93,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         // TODO Auto-generated method stub
         // Parameters to be set by users via the Repast UI slider bar
         // Do "not" modify the parameters names provided in the skeleton code, you can add more if you want
-        String[] params = {"GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold"};
+        String[] params = {"GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold", "MaxGrassPerCell"};
         return params;
     }
 
@@ -82,6 +107,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public void setup() {
         space = null;
+		schedule = new Schedule(1);
 
 		if (displaySurf != null){
 			displaySurf.dispose();
@@ -129,5 +155,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
 	public void setBirthThreshold(int birthThreshold) {
 		this.birthThreshold = birthThreshold;
+	}
+
+	public int getMaxGrassPerCell() {
+		return maxGrassPerCell;
+	}
+
+	public void setMaxGrassPerCell(int maxGrassPerCell) {
+		this.maxGrassPerCell = maxGrassPerCell;
 	}
 }
