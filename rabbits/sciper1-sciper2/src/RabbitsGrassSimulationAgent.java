@@ -65,16 +65,16 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     	int newX  = x, newY = y;
     	
         if (random == 1){
-        	newX = x--; // move west
+        	newX--; // move west
         }
         else if (random == 2){
-        	newX = x++; // move east
+        	newX++; // move east
         }
         else if (random == 3){
-        	newY = y--; // move south
+        	newY--; // move south
         }
         else if (random == 4){
-        	newY = y++; // move north
+        	newY++; // move north
         }
       
         
