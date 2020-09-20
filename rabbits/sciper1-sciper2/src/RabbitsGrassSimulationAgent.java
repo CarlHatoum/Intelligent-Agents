@@ -22,12 +22,13 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 	private int ID;
 	private RabbitsGrassSimulationSpace space;
 	
-	public RabbitsGrassSimulationAgent(){
+	public RabbitsGrassSimulationAgent(int maxEnergy, int minEnergy){
 		/**
 		 * Constructor to be implemented
 		 * x y random ?
 		 * Fixed initial energy ?
 		 */
+		energy = (int)((Math.random() * (maxEnergy - minEnergy)) + minEnergy);
 	    IDNumber++;
 	    ID = IDNumber;
 	}
@@ -60,7 +61,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
      */
     public void step(){
     	
-    	int random =  (int)Math.random()*4+1;
+    	int random =  (int)(Math.random())*4+1;
     	int newX  = x, newY = y;
     	
         if (random == 1){
@@ -75,21 +76,17 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         else if (random == 4){
         	newY++; // move north
         }
-      
-        
+              
       Object2DGrid grid = space.getCurrentRabbitSpace();
-      newX = (newX + grid.getSize()) % grid.getSize();
-      newY = (newY + grid.getSize()) % grid.getSize();
+      newX = (newX + grid.getSizeX()) % grid.getSizeX();
+      newY = (newY + grid.getSizeY()) % grid.getSizeY();
 
       if(space.moveRabbitAt(x, y, newX, newY)){
         energy += space.takeGrassAt(newX, newY);
         setXY(newX, newY);
+        energy--;
       }
-      else{
-        ///
-      }
-      
-      energy--;
+ 
     }
 
     public void setSpace(RabbitsGrassSimulationSpace space) {
