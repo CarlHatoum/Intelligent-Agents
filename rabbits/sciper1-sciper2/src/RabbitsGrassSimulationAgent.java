@@ -23,7 +23,16 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 	private int ID;
 	private RabbitsGrassSimulationSpace space;
 	
-
+	public RabbitsGrassSimulationAgent(){
+		/**
+		 * Constructor to be implemented
+		 * x y random ?
+		 * Fixed initial energy ?
+		 */
+	    IDNumber++;
+	    ID = IDNumber;
+	}
+	
     public void draw(SimGraphics G) {
         G.drawFastRoundRect(Color.blue);
     }
