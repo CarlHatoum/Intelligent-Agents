@@ -68,7 +68,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         }
       
         
-      Object2DGrid grid = space.getCurrentGrassSpace();
+      Object2DGrid grid = space.getCurrentRabbitSpace();
       int newX = (x + grid.getSizeX()) % grid.getSizeX();
       int newY = (y + grid.getSizeY()) % grid.getSizeY();
 
