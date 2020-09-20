@@ -1,3 +1,5 @@
+import RabbitsGrassSimulationAgent
+import demo.CarryDropAgent;
 import uchicago.src.sim.space.Discrete2DSpace;
 import uchicago.src.sim.space.Object2DGrid;
 
@@ -44,7 +46,18 @@ public class RabbitsGrassSimulationSpace {
             count++;
         }
     }
-
+    
+    public int getGrassAt(int x, int y){
+        int i;
+        if(grassSpace.getObjectAt(x,y)!= null){
+          i = ((Integer)grassSpace.getObjectAt(x,y)).intValue();
+        }
+        else{
+          i = 0;
+        }
+        return i;
+      }
+      
     public Object2DGrid getCurrentGrassSpace(){
         return grassSpace;
     }
@@ -67,5 +80,27 @@ public class RabbitsGrassSimulationSpace {
             }
         }
         return false;
+    }
+    
+    public void removeRabbitAt(int x, int y){
+        rabbitSpace.putObjectAt(x, y, null);
+    }
+    
+    public int takeGrassAt(int x, int y) {
+    	int grass = getGrassAt(x, y);
+        grassSpace.putObjectAt(x, y, new Integer(0));
+        return grass;
+    }
+    
+    public boolean moveRabbitAt(int x, int y, int newX, int newY) {
+    	boolean retVal = false;
+        if(!cellIsOccupied(newX, newY)){
+          RabbitsGrassSimulationAgent rabbit = (RabbitsGrassSimulationAgent)rabbitSpace.getObjectAt(x, y);
+          removeRabbitAt(x,y);
+          rabbit.setXY(newX, newY);
+          rabbitSpace.putObjectAt(newX, newY, rabbit);
+          retVal = true;
+        }
+        return retVal;
     }
 }
