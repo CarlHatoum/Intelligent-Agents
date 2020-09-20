@@ -1,6 +1,5 @@
 import java.awt.Color;
 
-import RabbitsGrassSimulationSpace;
 import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.SimGraphics;
 import uchicago.src.sim.space.Object2DGrid;
