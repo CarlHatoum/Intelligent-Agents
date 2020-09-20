@@ -29,7 +29,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 		y = -1;
 		energy = (int)((Math.random() * (maxEnergy - minEnergy)) + minEnergy);
 		IDNumber++;
-	    ID = IDNumber;
+		ID = IDNumber;
 	}
 	
     public void draw(SimGraphics G) {
@@ -43,6 +43,10 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     public int getY() {
         return y;
 
+    }
+    
+    public String getID(){
+        return "A-" + ID;
     }
     
     public void setXY(int newX, int newY){
