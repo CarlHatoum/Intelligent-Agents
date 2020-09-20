@@ -26,7 +26,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 	
 	public RabbitsGrassSimulationAgent(){
 		
-		// TODO : put rabbit on random places at birth
 		x = -1;
 		y = -1;
 		energy = (int)((Math.random() * (maxEnergy - minEnergy)) + minEnergy);
