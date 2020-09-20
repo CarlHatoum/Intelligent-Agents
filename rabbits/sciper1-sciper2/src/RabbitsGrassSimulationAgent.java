@@ -64,7 +64,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
      */
     public void step(){
     	
-    	int random =  (int)(Math.random())*4+1;
+    	int random =  (int)(Math.random()*4+1);
     	int newX  = x, newY = y;
     	
         if (random == 1){

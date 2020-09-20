@@ -31,14 +31,14 @@ public class RabbitsGrassSimulationSpace {
             int x = (int) (Math.random() * (grassSpace.getSizeX()));
             int y = (int) (Math.random() * (grassSpace.getSizeY()));
 
-            int I;
+            int currentGrass;
             if (grassSpace.getObjectAt(x, y) != null) {
-                I = (Integer) grassSpace.getObjectAt(x, y);
+                currentGrass = (Integer) grassSpace.getObjectAt(x, y);
             } else {
-                I = 0;
+                currentGrass = 0;
             }
-            if (I < maxGrassPerCell) {
-                grassSpace.putObjectAt(x, y, I + 1);
+            if (currentGrass < maxGrassPerCell) {
+                grassSpace.putObjectAt(x, y, currentGrass + 1);
                 i++;
             }
             count++;
@@ -48,7 +48,7 @@ public class RabbitsGrassSimulationSpace {
     public int getGrassAt(int x, int y){
         int i;
         if(grassSpace.getObjectAt(x,y)!= null){
-          i = ((Integer)grassSpace.getObjectAt(x,y)).intValue();
+          i = (Integer) grassSpace.getObjectAt(x, y);
         }
         else{
           i = 0;
