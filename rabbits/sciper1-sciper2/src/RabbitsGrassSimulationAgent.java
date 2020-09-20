@@ -25,7 +25,8 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 	private RabbitsGrassSimulationSpace space;
 	
 	public RabbitsGrassSimulationAgent(){
-		// to be implemented : rabbit put on random places at birth
+		
+		// TODO : put rabbit on random places at birth
 		x = -1;
 		y = -1;
 		energy = (int)((Math.random() * (maxEnergy - minEnergy)) + minEnergy);
@@ -90,6 +91,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         setXY(newX, newY);
         energy--;
       }
+      // TODO : try another position if cell is occupied
     }
 
     public void setSpace(RabbitsGrassSimulationSpace space) {
