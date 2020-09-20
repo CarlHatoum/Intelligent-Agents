@@ -25,6 +25,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 	private RabbitsGrassSimulationSpace space;
 	
 	public RabbitsGrassSimulationAgent(){
+		// to be implemented : rabbit put on random places at birth
 		x = -1;
 		y = -1;
 		energy = (int)((Math.random() * (maxEnergy - minEnergy)) + minEnergy);
@@ -64,7 +65,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
      */
     public void step(){
     	
-    	int random =  (int)(Math.random())*4+1;
+    	int random =  (int)(Math.random()*4+1);
     	int newX  = x, newY = y;
     	
         if (random == 1){
