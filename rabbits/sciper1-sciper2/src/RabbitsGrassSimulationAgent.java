@@ -72,7 +72,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
       int newX = (x + grid.getSizeX()) % grid.getSizeX();
       int newY = (y + grid.getSizeY()) % grid.getSizeY();
 
-      if(tryMove(newX, newY)){
+      if(space.moveRabbitAt(x, y, newX, newY)){
         energy += space.takeGrassAt(newX, newY);
       }
       else{
@@ -80,11 +80,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
       }
       setXY(newX, newY);
       energy--;
-    }
-    
-    private boolean tryMove(int newX, int newY){
-        return space.moveRabbitAt(x, y, newX, newY);
-
     }
 
     public void setSpace(RabbitsGrassSimulationSpace space) {
