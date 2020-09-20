@@ -74,11 +74,12 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 
       if(space.moveRabbitAt(x, y, newX, newY)){
         energy += space.takeGrassAt(newX, newY);
+        setXY(newX, newY);
       }
       else{
         ///
       }
-      setXY(newX, newY);
+      
       energy--;
     }
 
