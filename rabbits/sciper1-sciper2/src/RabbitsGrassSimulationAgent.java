@@ -62,24 +62,25 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     public void step(){
     	
     	int random =  (int)Math.random()*4+1;
+    	int newX  = x, newY = y;
     	
         if (random == 1){
-            x--; // move west
+        	newX = x--; // move west
         }
         else if (random == 2){
-            x++; // move east
+        	newX = x++; // move east
         }
         else if (random == 3){
-            y--; // move south
+        	newY = y--; // move south
         }
         else if (random == 4){
-            y++; // move north
+        	newY = y++; // move north
         }
       
         
       Object2DGrid grid = space.getCurrentRabbitSpace();
-      int newX = (x + grid.getSizeX()) % grid.getSizeX();
-      int newY = (y + grid.getSizeY()) % grid.getSizeY();
+      newX = (x + grid.getSizeX()) % grid.getSizeX();
+      newY = (y + grid.getSizeY()) % grid.getSizeY();
 
       if(space.moveRabbitAt(x, y, newX, newY)){
         energy += space.takeGrassAt(newX, newY);
