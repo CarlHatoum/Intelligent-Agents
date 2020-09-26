@@ -47,7 +47,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
     
     public String getID(){
-        return "A-" + ID;
+        return "Rabbit-" + ID;
     }
     
     public void setXY(int newX, int newY){
@@ -59,11 +59,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         return energy;
     }
     
-    /**
-     * A basic 'step' for this agent random move to adjacent cells (north, south, east and west)
-     * If presence of grass 
-     */
-    public void step(){
+    public int[] chooseRandomMove() {
     	
     	int random =  (int)(Math.random()*4+1);
     	int newX  = x, newY = y;
@@ -84,13 +80,33 @@ public class RabbitsGrassSimulationAgent implements Drawable {
       Object2DGrid grid = space.getCurrentRabbitSpace();
       newX = (newX + grid.getSizeX()) % grid.getSizeX();
       newY = (newY + grid.getSizeY()) % grid.getSizeY();
+      
+      return new int[] {newX, newY};
 
-      if(space.moveRabbitAt(x, y, newX, newY)){
-        energy += space.takeGrassAt(newX, newY);
-        setXY(newX, newY);
+    }
+    
+    public void moveAt(int newX, int newY) {
+    	setXY(newX, newY);
+    	energy += space.takeGrassAt(newX, newY);
         energy--;
-      }
-      // TODO : try another position if cell is occupied
+    }
+    
+    /**
+     * moves if cell is not occupied 
+     * after 4 random trial, stays at same position
+     */
+    public void step(){
+    	      
+      for (int i = 0; i < 5; i++) {
+    	  
+    	  int res[] = chooseRandomMove();
+    	  if(space.moveRabbitAt(x, y, res[0], res[1])){
+    		  
+    		  moveAt(res[0], res[1]);
+    		  break; 
+          }
+    	} 
+      
     }
 
     public void setSpace(RabbitsGrassSimulationSpace space) {
