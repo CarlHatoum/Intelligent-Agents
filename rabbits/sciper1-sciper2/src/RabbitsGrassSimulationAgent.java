@@ -97,7 +97,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
      */
     public void step(){
     	      
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 4; i++) {
     	  
     	  int res[] = chooseRandomMove();
     	  if(space.moveRabbitAt(x, y, res[0], res[1])){
