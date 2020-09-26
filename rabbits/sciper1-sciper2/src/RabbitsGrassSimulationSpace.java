@@ -1,4 +1,3 @@
-import uchicago.src.sim.space.Discrete2DSpace;
 import uchicago.src.sim.space.Object2DGrid;
 
 /**

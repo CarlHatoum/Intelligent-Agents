@@ -1,3 +1,6 @@
+import uchicago.src.sim.analysis.DataSource;
+import uchicago.src.sim.analysis.OpenSequenceGraph;
+import uchicago.src.sim.analysis.Sequence;
 import uchicago.src.sim.engine.BasicAction;
 import uchicago.src.sim.engine.Schedule;
 import uchicago.src.sim.engine.SimModelImpl;
@@ -10,8 +13,6 @@ import uchicago.src.sim.util.SimUtilities;
 
 import java.awt.*;
 import java.util.ArrayList;
-
-//import demo.CarryDropAgent;
 
 /**
  * Class that implements the simulation model for the rabbits grass
@@ -46,9 +47,35 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private ArrayList<RabbitsGrassSimulationAgent> rabbitList;
 
+
+    private OpenSequenceGraph populationPlot;
+
+    class rabbitCount implements DataSource, Sequence {
+
+        public Object execute() {
+            return getSValue();
+        }
+
+        public double getSValue() {
+            return rabbitList.size();
+        }
+    }
+
+    class grassCount implements DataSource, Sequence {
+
+        public Object execute() {
+            return getSValue();
+        }
+
+        public double getSValue() {
+            return countGrass();
+        }
+    }
+
+
     public static void main(String[] args) {
 
-        System.out.println("Rabbit skeleton");
+        //System.out.println("Rabbit skeleton");
 
         SimInit init = new SimInit();
         RabbitsGrassSimulationModel model = new RabbitsGrassSimulationModel();
@@ -65,12 +92,14 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         buildDisplay();
 
         displaySurf.display();
+        populationPlot.display();
     }
 
     public void buildModel() {
         space = new RabbitsGrassSimulationSpace(gridSize, maxGrassPerCell);
         space.setModel(this);
         space.spreadGrass(numInitGrass);
+
         RabbitsGrassSimulationAgent.setEnergyPerGrass(energyPerGrass);
         RabbitsGrassSimulationAgent.setBirthThreshold(birthThreshold);
 
@@ -104,6 +133,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             }
         }
         schedule.scheduleActionBeginning(0, new GrassGrowth());
+
+        class UpdatePopulationPlot extends BasicAction {
+            public void execute() {
+                populationPlot.step();
+            }
+        }
+        schedule.scheduleActionAtInterval(10, new UpdatePopulationPlot());
     }
 
     public void buildDisplay() {
@@ -122,6 +158,9 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
         displaySurf.addDisplayableProbeable(displayMoney, "Grass");
         displaySurf.addDisplayableProbeable(displayRabbits, "Rabbits");
+
+        populationPlot.addSequence("Number of Rabbits", new rabbitCount());
+        populationPlot.addSequence("Number of Grass", new grassCount());
     }
 
     private void addNewRandomRabbit() {
@@ -156,6 +195,16 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         }
     }
 
+    private int countGrass() {
+        int grassCount = 0;
+        for (int i = 0; i < gridSize; i++) {
+            for (int j = 0; j < gridSize; j++) {
+                grassCount += space.getGrassAt(i, j);
+            }
+        }
+        return grassCount;
+    }
+
 
     public String[] getInitParam() {
         // TODO Auto-generated method stub
@@ -184,6 +233,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         displaySurf = null;
         displaySurf = new DisplaySurface(this, "Rabbits Grass Simulation 1");
         registerDisplaySurface("Rabbits Grass Simulation 1", displaySurf);
+
+        if (populationPlot != null) {
+            populationPlot.dispose();
+        }
+        populationPlot = null;
+        populationPlot = new OpenSequenceGraph("Population Plot", this);
+        this.registerMediaProducer("Plot", populationPlot);
     }
 
     public int getGridSize() {
