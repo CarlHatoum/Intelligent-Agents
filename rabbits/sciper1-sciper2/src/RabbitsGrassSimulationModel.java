@@ -11,6 +11,8 @@ import uchicago.src.sim.util.SimUtilities;
 import java.awt.*;
 import java.util.ArrayList;
 
+//import demo.CarryDropAgent;
+
 /**
  * Class that implements the simulation model for the rabbits grass
  * simulation.  This is the first class which needs to be setup in
@@ -102,7 +104,10 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	public void buildSchedule(){
 		class SimulationStep extends BasicAction {
 			public void execute() {
-				//TODO
+				for(int i =0; i < rabbitList.size(); i++){
+					RabbitsGrassSimulationAgent rabbit = (RabbitsGrassSimulationAgent)rabbitList.get(i);
+			        rabbit.step();
+			        }
 			}
 		}
 		schedule.scheduleActionBeginning(0, new SimulationStep());

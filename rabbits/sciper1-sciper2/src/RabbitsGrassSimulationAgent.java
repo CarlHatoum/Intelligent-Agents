@@ -1,5 +1,9 @@
 import java.awt.Color;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.SimGraphics;
 import uchicago.src.sim.space.Object2DGrid;
@@ -59,21 +63,20 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         return energy;
     }
     
-    public int[] chooseRandomMove() {
+    public int[] chooseMove(int m) {
     	
-    	int random =  (int)(Math.random()*4+1);
     	int newX  = x, newY = y;
     	
-        if (random == 1){
+        if (m == 0){
         	newX--; // move west
         }
-        else if (random == 2){
+        else if (m == 1){
         	newX++; // move east
         }
-        else if (random == 3){
+        else if (m == 2){
         	newY--; // move south
         }
-        else if (random == 4){
+        else if (m == 3){
         	newY++; // move north
         }
               
@@ -86,9 +89,11 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
     
     public void moveAt(int newX, int newY) {
+    	
     	setXY(newX, newY);
     	energy += space.takeGrassAt(newX, newY);
         energy--;
+        
     }
     
     /**
@@ -96,16 +101,25 @@ public class RabbitsGrassSimulationAgent implements Drawable {
      * after 4 random trial, stays at same position
      */
     public void step(){
+    	
+    	Integer[] intArray = { 0, 1, 2, 3 };
+		List<Integer> intList = Arrays.asList(intArray);
+		Collections.shuffle(intList);
+		intList.toArray(intArray);
+		
+		for (int i: intList) {
+			
+			int res[] = chooseMove(i);
+			
+			if(space.moveRabbitAt(x, y, res[0], res[1])){
+				
+	    		  moveAt(res[0], res[1]);
+	    		  break; 
+	          }
+			
+		}
     	      
-      for (int i = 0; i < 4; i++) {
-    	  
-    	  int res[] = chooseRandomMove();
-    	  if(space.moveRabbitAt(x, y, res[0], res[1])){
-    		  
-    		  moveAt(res[0], res[1]);
-    		  break; 
-          }
-    	} 
+
       
     }
 
