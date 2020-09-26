@@ -108,6 +108,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 					RabbitsGrassSimulationAgent rabbit = (RabbitsGrassSimulationAgent)rabbitList.get(i);
 			        rabbit.step();
 			        }
+				displaySurf.updateDisplay();
 			}
 		}
 		schedule.scheduleActionBeginning(0, new SimulationStep());
@@ -115,7 +116,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		class GrassGrowth extends BasicAction {
 			public void execute() {
 				space.spreadGrass(grassGrowthRate);
-				displaySurf.updateDisplay();
 			}
 		}
 		schedule.scheduleActionBeginning(0, new GrassGrowth());

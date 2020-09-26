@@ -8,8 +8,6 @@ import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.SimGraphics;
 import uchicago.src.sim.space.Object2DGrid;
 
-import java.awt.*;
-
 
 /**
  * Class that implements the simulation agent for the rabbits grass simulation.
@@ -18,6 +16,8 @@ import java.awt.*;
  */
 
 public class RabbitsGrassSimulationAgent implements Drawable {
+
+    public static final int NORTH=0, EAST = 1, SOUTH = 2, WEST =3;
 
 	private int x;
 	private int y;
@@ -29,7 +29,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 	private RabbitsGrassSimulationSpace space;
 	
 	public RabbitsGrassSimulationAgent(){
-		
 		x = -1;
 		y = -1;
 		energy = (int)((Math.random() * (maxEnergy - minEnergy)) + minEnergy);
@@ -63,21 +62,21 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         return energy;
     }
     
-    public int[] chooseMove(int m) {
+    public int[] moveInDirection(int dir) {
     	
     	int newX  = x, newY = y;
     	
-        if (m == 0){
-        	newX--; // move west
+        if (dir == WEST){
+        	newX--;
         }
-        else if (m == 1){
-        	newX++; // move east
+        else if (dir == EAST){
+        	newX++;
         }
-        else if (m == 2){
-        	newY--; // move south
+        else if (dir == SOUTH){
+        	newY--;
         }
-        else if (m == 3){
-        	newY++; // move north
+        else if (dir == NORTH){
+        	newY++;
         }
               
       Object2DGrid grid = space.getCurrentRabbitSpace();
@@ -101,26 +100,18 @@ public class RabbitsGrassSimulationAgent implements Drawable {
      * after 4 random trial, stays at same position
      */
     public void step(){
-    	
-    	Integer[] intArray = { 0, 1, 2, 3 };
-		List<Integer> intList = Arrays.asList(intArray);
+		List<Integer> intList = Arrays.asList(NORTH, EAST, SOUTH, WEST);
 		Collections.shuffle(intList);
-		intList.toArray(intArray);
 		
 		for (int i: intList) {
 			
-			int res[] = chooseMove(i);
+			int res[] = moveInDirection(i);
 			
 			if(space.moveRabbitAt(x, y, res[0], res[1])){
-				
 	    		  moveAt(res[0], res[1]);
 	    		  break; 
 	          }
-			
 		}
-    	      
-
-      
     }
 
     public void setSpace(RabbitsGrassSimulationSpace space) {
