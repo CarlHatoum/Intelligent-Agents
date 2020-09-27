@@ -142,7 +142,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             return false;
         }
         if (energyToReproduce > birthThreshold) {
-            System.out.println("Simulation Error: EnergyToReproduce should be greater than BirthThreshold");
+            System.out.println("Simulation Error: BirthThreshold should be greater than EnergyToReproduce");
             return false;
         }
         return true;
