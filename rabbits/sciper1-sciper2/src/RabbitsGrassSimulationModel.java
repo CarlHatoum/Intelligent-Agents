@@ -124,12 +124,28 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
      * method called at the start of a run
      */
     public void begin() {
+        if (!checkParams()) return;
+
         buildModel();
         buildSchedule();
         buildDisplay();
 
         displaySurf.display();
         populationPlot.display();
+    }
+
+    public boolean checkParams() {
+        if (gridSize <= 0 || numInitRabbits < 0 || numInitGrass < 0
+                || grassGrowthRate < 0 || birthThreshold <= 0 || maxGrassPerCell <= 0
+                || energyPerGrass < 0 || energyToReproduce < 0) {
+            System.out.println("Simulation Error: Parameters should be positive");
+            return false;
+        }
+        if (energyToReproduce > birthThreshold) {
+            System.out.println("Simulation Error: EnergyToReproduce should be greater than BirthThreshold");
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -225,7 +241,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
      */
     public boolean addNewRabbit(int x, int y) {
         //create a new rabbit with a random energy level between 0.2 and 1 times birthThreshold
-        int rabbitInitialEnergy = (int) ((Math.random() * (birthThreshold - birthThreshold*0.2)) + birthThreshold*0.2);
+        int rabbitInitialEnergy = (int) ((Math.random() * (birthThreshold - birthThreshold * 0.2)) + birthThreshold * 0.2);
         RabbitsGrassSimulationAgent newRabbit = new RabbitsGrassSimulationAgent(rabbitInitialEnergy);
         if (space.addRabbit(newRabbit, x, y)) {
             rabbitList.add(newRabbit);
