@@ -86,10 +86,10 @@ public class RabbitsGrassSimulationAgent implements Drawable {
      */
     public void tryReproduce() {
         if (energy >= model.getBirthThreshold()) {
-            energy -= model.getEnergyToReproduce();
             int[] newRabbitPos = space.getFreeAdjacentCell(x, y);
             if (newRabbitPos != null) {
                 model.addNewRabbit(newRabbitPos[0], newRabbitPos[1]);
+                energy -= model.getEnergyToReproduce();
             }
         }
     }
