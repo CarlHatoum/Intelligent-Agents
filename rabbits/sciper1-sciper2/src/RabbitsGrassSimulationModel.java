@@ -19,8 +19,6 @@ import java.util.ArrayList;
  * simulation.  This is the first class which needs to be setup in
  * order to run Repast simulation. It manages the entire RePast
  * environment and the simulation.
- *
- * @author
  */
 
 
@@ -32,6 +30,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private static final int BIRTH_THRESHOLD = 20;
     private static final int MAX_GRASS_PER_CELL = 4;
     private static final int ENERGY_PER_GRASS = 6;
+    private static final int ENERGY_TO_REPRODUCE = 10;
 
     private int gridSize = GRID_SIZE;
     private int numInitRabbits = NUM_INIT_RABBITS;
@@ -40,6 +39,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
     private int birthThreshold = BIRTH_THRESHOLD;
     private int maxGrassPerCell = MAX_GRASS_PER_CELL;
     private int energyPerGrass = ENERGY_PER_GRASS;
+    private int energyToReproduce = ENERGY_TO_REPRODUCE;
 
     private Schedule schedule;
     private RabbitsGrassSimulationSpace space;
@@ -47,7 +47,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     private ArrayList<RabbitsGrassSimulationAgent> rabbitList;
 
-
+    //population plot and its 2 sequences
     private OpenSequenceGraph populationPlot;
 
     class rabbitCount implements DataSource, Sequence {
@@ -68,14 +68,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         }
 
         public double getSValue() {
-            return countGrass();
+            return space.getNumberOfGrass();
         }
     }
 
-
     public static void main(String[] args) {
 
-        //System.out.println("Rabbit skeleton");
+        System.out.println("Rabbits Grass Simulation");
 
         SimInit init = new SimInit();
         RabbitsGrassSimulationModel model = new RabbitsGrassSimulationModel();
@@ -86,6 +85,44 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
             init.loadModel(model, args[0], Boolean.parseBoolean(args[1]));
     }
 
+    public String getName() {
+        return "Rabbits Grass Simulation";
+    }
+
+    public String[] getInitParam() {
+        String[] params = {"GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold", "MaxGrassPerCell", "EnergyPerGrass", "energyToReproduce"};
+        return params;
+    }
+
+    /**
+     * reset the simulation
+     * recreate the rabbit list, the schedule and the windows
+     */
+    public void setup() {
+        space = null;
+        rabbitList = new ArrayList<>();
+        schedule = new Schedule(1);
+
+        //recreate main window
+        if (displaySurf != null) {
+            displaySurf.dispose();
+        }
+        displaySurf = null;
+        displaySurf = new DisplaySurface(this, "Rabbits Grass Simulation 1");
+        registerDisplaySurface("Rabbits Grass Simulation 1", displaySurf);
+
+        //recreate population plot
+        if (populationPlot != null) {
+            populationPlot.dispose();
+        }
+        populationPlot = null;
+        populationPlot = new OpenSequenceGraph("Population Plot", this);
+        this.registerMediaProducer("Plot", populationPlot);
+    }
+
+    /**
+     * method called at the start of a run
+     */
     public void begin() {
         buildModel();
         buildSchedule();
@@ -95,22 +132,22 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         populationPlot.display();
     }
 
+    /**
+     * initialize the space with random grass and rabbit placement
+     */
     public void buildModel() {
-        space = new RabbitsGrassSimulationSpace(gridSize, maxGrassPerCell);
+        space = new RabbitsGrassSimulationSpace(gridSize);
         space.setModel(this);
         space.spreadGrass(numInitGrass);
-
-        RabbitsGrassSimulationAgent.setEnergyPerGrass(energyPerGrass);
-        RabbitsGrassSimulationAgent.setBirthThreshold(birthThreshold);
 
         for (int i = 0; i < numInitRabbits; i++) {
             addNewRandomRabbit();
         }
-//		for(int i = 0; i < rabbitList.size(); i++){
-//			RabbitsGrassSimulationAgent rabbit = (RabbitsGrassSimulationAgent)rabbitList.get(i);
-//		}
     }
 
+    /**
+     * create schedules for the behavior of the rabbits, grass growth and plot updates
+     */
     public void buildSchedule() {
         class SimulationStep extends BasicAction {
             public void execute() {
@@ -139,9 +176,12 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
                 populationPlot.step();
             }
         }
-        schedule.scheduleActionAtInterval(10, new UpdatePopulationPlot());
+        schedule.scheduleActionAtInterval(8, new UpdatePopulationPlot());
     }
 
+    /**
+     * build the main grid display window with probeable cells and rabbits.
+     */
     public void buildDisplay() {
         ColorMap map = new ColorMap();
 
@@ -159,10 +199,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         displaySurf.addDisplayableProbeable(displayMoney, "Grass");
         displaySurf.addDisplayableProbeable(displayRabbits, "Rabbits");
 
-        populationPlot.addSequence("Number of Rabbits", new rabbitCount());
-        populationPlot.addSequence("Number of Grass", new grassCount());
+        populationPlot.addSequence("Number of Rabbits", new rabbitCount(), Color.BLUE);
+        populationPlot.addSequence("Number of Grass", new grassCount(), new Color(0, 150, 0));
     }
 
+    /**
+     * create a new rabbit at a free random location on the grid
+     */
     private void addNewRandomRabbit() {
         int countLimit = 10 * gridSize ^ 2;
         boolean foundFreeCell = false;
@@ -177,14 +220,22 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         }
     }
 
+    /**
+     * create a new rabbit at given position
+     */
     public boolean addNewRabbit(int x, int y) {
-        RabbitsGrassSimulationAgent newRabbit = new RabbitsGrassSimulationAgent();
+        //create a new rabbit with a random energy level between 0.2 and 1 times birthThreshold
+        int rabbitInitialEnergy = (int) ((Math.random() * (birthThreshold - birthThreshold*0.2)) + birthThreshold*0.2);
+        RabbitsGrassSimulationAgent newRabbit = new RabbitsGrassSimulationAgent(rabbitInitialEnergy);
         if (space.addRabbit(newRabbit, x, y)) {
             rabbitList.add(newRabbit);
             return true;
         } else return false;
     }
 
+    /**
+     * remove all rabbits with zero energy from the grid
+     */
     private void reapDeadRabbits() {
         for (int i = (rabbitList.size() - 1); i >= 0; i--) {
             RabbitsGrassSimulationAgent rabbit = rabbitList.get(i);
@@ -195,51 +246,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         }
     }
 
-    private int countGrass() {
-        int grassCount = 0;
-        for (int i = 0; i < gridSize; i++) {
-            for (int j = 0; j < gridSize; j++) {
-                grassCount += space.getGrassAt(i, j);
-            }
-        }
-        return grassCount;
-    }
-
-
-    public String[] getInitParam() {
-        // TODO Auto-generated method stub
-        // Parameters to be set by users via the Repast UI slider bar
-        // Do "not" modify the parameters names provided in the skeleton code, you can add more if you want
-        String[] params = {"GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold", "MaxGrassPerCell", "EnergyPerGrass"};
-        return params;
-    }
-
-    public String getName() {
-        return "Rabbits Grass Simulation";
-    }
-
     public Schedule getSchedule() {
         return schedule;
-    }
-
-    public void setup() {
-        space = null;
-        rabbitList = new ArrayList<>();
-        schedule = new Schedule(1);
-
-        if (displaySurf != null) {
-            displaySurf.dispose();
-        }
-        displaySurf = null;
-        displaySurf = new DisplaySurface(this, "Rabbits Grass Simulation 1");
-        registerDisplaySurface("Rabbits Grass Simulation 1", displaySurf);
-
-        if (populationPlot != null) {
-            populationPlot.dispose();
-        }
-        populationPlot = null;
-        populationPlot = new OpenSequenceGraph("Population Plot", this);
-        this.registerMediaProducer("Plot", populationPlot);
     }
 
     public int getGridSize() {
@@ -296,5 +304,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
     public void setEnergyPerGrass(int energyPerGrass) {
         this.energyPerGrass = energyPerGrass;
+    }
+
+    public int getEnergyToReproduce() {
+        return energyToReproduce;
+    }
+
+    public void setEnergyToReproduce(int energyToReproduce) {
+        this.energyToReproduce = energyToReproduce;
     }
 }

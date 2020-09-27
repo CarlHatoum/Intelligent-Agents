@@ -1,53 +1,35 @@
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.SimGraphics;
-import uchicago.src.sim.space.Object2DGrid;
 
 import javax.imageio.ImageIO;
 
-
 /**
  * Class that implements the simulation agent for the rabbits grass simulation.
- *
- * @author
  */
 
 public class RabbitsGrassSimulationAgent implements Drawable {
-
-    public static final int NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3;
-
     private int x;
     private int y;
     private int energy;
-    private static int IDNumber = 0;
     private static int maxEnergy = 20;
     private static int minEnergy = 0;
+    private static int IDNumber = 0;
     private int ID;
-    private static int energyPerGrass;
-    private static int birthThreshold;
+
     private RabbitsGrassSimulationSpace space;
     private RabbitsGrassSimulationModel model;
 
-    public RabbitsGrassSimulationAgent() {
+    public RabbitsGrassSimulationAgent(int initialEnergy) {
         x = -1;
         y = -1;
-        energy = (int) ((Math.random() * (maxEnergy - minEnergy)) + minEnergy);
+        //assign a random energy value
+        energy = initialEnergy;
         IDNumber++;
         ID = IDNumber;
-    }
-
-    public static void setEnergyPerGrass(int energyPerGrass) {
-        RabbitsGrassSimulationAgent.energyPerGrass = energyPerGrass;
-    }
-
-    public static void setBirthThreshold(int birthThreshold) {
-        RabbitsGrassSimulationAgent.birthThreshold = birthThreshold;
     }
 
     public void draw(SimGraphics G) {
@@ -55,7 +37,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         try {
             img = ImageIO.read(new File("rabbit.png"));
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            System.out.println("error reading rabbit.png");
         }
         G.drawImage(img);
     }
@@ -66,7 +48,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 
     public int getY() {
         return y;
-
     }
 
     public String getID() {
@@ -78,44 +59,20 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         y = newY;
     }
 
-    public int getEnergy() {
-        return energy;
-    }
-
-    public int[] getCellInDirection(int dir) {
-
-        int newX = x, newY = y;
-
-        if (dir == WEST) {
-            newX--;
-        } else if (dir == EAST) {
-            newX++;
-        } else if (dir == SOUTH) {
-            newY--;
-        } else if (dir == NORTH) {
-            newY++;
-        }
-
-        Object2DGrid grid = space.getCurrentRabbitSpace();
-        newX = (newX + grid.getSizeX()) % grid.getSizeX();
-        newY = (newY + grid.getSizeY()) % grid.getSizeY();
-
-        return new int[]{newX, newY};
-
-    }
-
     /**
-     * moves if cell is not occupied
-     * after 4 random trial, stays at same position
+     * method called every tick of simulation to move the rabbit, then eat grass, then reproduce if possible
      */
     public void step() {
-        tryMoving();
+        tryMove();
         eatGrass();
         tryReproduce();
     }
 
-    public void tryMoving() {
-        int[] nextPos = getFreeAdjacentCell();
+    /**
+     * move in a random free adjacent cell and lose an energy point
+     */
+    public void tryMove() {
+        int[] nextPos = space.getFreeAdjacentCell(x, y);
         if (nextPos != null) {
             int newX = nextPos[0], newY = nextPos[1];
             if (moveTo(newX, newY)) {
@@ -124,35 +81,32 @@ public class RabbitsGrassSimulationAgent implements Drawable {
         }
     }
 
+    /**
+     * if the rabbits has enough energy, create a new one in an adjacent cell
+     */
     public void tryReproduce() {
-        if (energy >= birthThreshold) {
-            energy -= birthThreshold / 2;
-            int[] newRabbitPos = getFreeAdjacentCell();
+        if (energy >= model.getBirthThreshold()) {
+            energy -= model.getEnergyToReproduce();
+            int[] newRabbitPos = space.getFreeAdjacentCell(x, y);
             if (newRabbitPos != null) {
                 model.addNewRabbit(newRabbitPos[0], newRabbitPos[1]);
             }
         }
     }
 
+    /**
+     * eat the grass at the current rabbit location to gain energy
+     */
     public void eatGrass() {
-        energy += space.takeGrassAt(x, y) * energyPerGrass;
+        energy += space.takeGrassAt(x, y) * model.getEnergyPerGrass();
     }
 
     public boolean moveTo(int newX, int newY) {
         return space.moveRabbitAt(x, y, newX, newY);
     }
 
-    public int[] getFreeAdjacentCell() {
-        List<Integer> dirList = Arrays.asList(NORTH, EAST, SOUTH, WEST);
-        Collections.shuffle(dirList);
-
-        for (int dir : dirList) {
-            int res[] = getCellInDirection(dir);
-            if (!space.cellIsOccupied(res[0], res[1])) {
-                return res;
-            }
-        }
-        return null;
+    public int getEnergy() {
+        return energy;
     }
 
     public void setSpace(RabbitsGrassSimulationSpace space) {
