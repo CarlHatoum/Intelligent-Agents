@@ -24,12 +24,12 @@ import java.util.ArrayList;
 
 public class RabbitsGrassSimulationModel extends SimModelImpl {
     private static final int GRID_SIZE = 20;
-    private static final int NUM_INIT_RABBITS = 20;
-    private static final int NUM_INIT_GRASS = 100;
-    private static final int GRASS_GROWTH_RATE = 4;
+    private static final int NUM_INIT_RABBITS = 100;
+    private static final int NUM_INIT_GRASS = 70;
+    private static final int GRASS_GROWTH_RATE = 15;
     private static final int BIRTH_THRESHOLD = 20;
-    private static final int MAX_GRASS_PER_CELL = 4;
-    private static final int ENERGY_PER_GRASS = 6;
+    private static final int MAX_GRASS_PER_CELL = 1;
+    private static final int ENERGY_PER_GRASS = 5;
     private static final int ENERGY_TO_REPRODUCE = 10;
 
     private int gridSize = GRID_SIZE;
@@ -117,8 +117,11 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
         }
         populationPlot = null;
         populationPlot = new OpenSequenceGraph("Population Plot", this);
+        populationPlot.setYAutoExpand(false);
+        populationPlot.setYRange(0, 200);
         this.registerMediaProducer("Plot", populationPlot);
     }
+
 
     /**
      * method called at the start of a run
@@ -192,7 +195,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
                 populationPlot.step();
             }
         }
-        schedule.scheduleActionAtInterval(8, new UpdatePopulationPlot());
+        schedule.scheduleActionAtInterval(5, new UpdatePopulationPlot());
     }
 
     /**

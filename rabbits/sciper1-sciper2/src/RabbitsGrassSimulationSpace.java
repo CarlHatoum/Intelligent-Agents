@@ -94,7 +94,7 @@ public class RabbitsGrassSimulationSpace {
      * return the coordinate of a random free adjacent cell among the 4 cardinal directions from given location
      */
     public int[] getFreeAdjacentCell(int x, int y) {
-        List<Integer> dirList = Arrays.asList(RabbitsGrassSimulationSpace.DIRECTIONS);
+        List<Integer> dirList = Arrays.asList(DIRECTIONS);
         Collections.shuffle(dirList);
 
         for (int dir : dirList) {
