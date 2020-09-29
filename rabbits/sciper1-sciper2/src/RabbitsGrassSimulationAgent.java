@@ -15,8 +15,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     private int x;
     private int y;
     private int energy;
-    private static int maxEnergy = 20;
-    private static int minEnergy = 0;
     private static int IDNumber = 0;
     private int ID;
 
