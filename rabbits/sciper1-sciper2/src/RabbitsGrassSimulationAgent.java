@@ -1,11 +1,16 @@
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 
 import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.SimGraphics;
 
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+
+import org.apache.log4j.chainsaw.Main;
 
 /**
  * Class that implements the simulation agent for the rabbits grass simulation.
@@ -31,13 +36,9 @@ public class RabbitsGrassSimulationAgent implements Drawable {
     }
 
     public void draw(SimGraphics G) {
-        BufferedImage img = null;
-        try {
-            img = ImageIO.read(new File("rabbit.png"));
-        } catch (IOException e) {
-            System.out.println("error reading rabbit.png");
-        }
-        G.drawImage(img);
+    	URL url = Main.class.getResource("/rabbit.png");
+    	ImageIcon img = new ImageIcon(url);
+        G.drawImage(img.getImage());
     }
 
     public int getX() {
