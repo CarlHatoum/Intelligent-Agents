@@ -6,7 +6,6 @@ import java.util.Random;
 import logist.simulation.Vehicle;
 import logist.agent.Agent;
 import logist.behavior.ReactiveBehavior;
-import logist.plan.Action;
 import logist.plan.Action.Move;
 import logist.plan.Action.Pickup;
 import logist.task.Task;
@@ -37,17 +36,18 @@ public class ReactiveTemplate implements ReactiveBehavior {
         this.myAgent = agent;
 
         policy = new PolicyGenerator(topology, td).generatePolicy(discount);
+        //new PolicyGenerator(topology, td).displayT();
     }
 
     @Override
-    public Action act(Vehicle vehicle, Task availableTask) {
-        Action action;
+    public logist.plan.Action act(Vehicle vehicle, Task availableTask) {
+        logist.plan.Action action;
 
         if (availableTask == null || random.nextDouble() > pPickup) {
             City currentCity = vehicle.getCurrentCity();
-            action = new Move(currentCity.randomNeighbor(random));
+            action = new logist.plan.Action.Move(currentCity.randomNeighbor(random));
         } else {
-            action = new Pickup(availableTask);
+            action = new logist.plan.Action.Pickup(availableTask);
         }
 
         if (numActions >= 1) {

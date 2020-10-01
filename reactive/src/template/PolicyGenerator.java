@@ -1,6 +1,5 @@
 package template;
 
-import logist.plan.Action;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
@@ -10,8 +9,6 @@ import java.util.Collections;
 import java.util.HashMap;
 
 public class PolicyGenerator {
-    private int numberOfCities;
-    private int numberOfTasks;
     private Topology topology;
     private TaskDistribution td;
     private final ArrayList<State> possibleStates;
@@ -30,6 +27,7 @@ public class PolicyGenerator {
                     res.add(new State(city, new Task(taskDestination)));
                 }
             }
+            res.add(new State(city, null));
         }
         return res;
     }
@@ -38,9 +36,11 @@ public class PolicyGenerator {
         City city = s.getCity();
         ArrayList<Action> res = new ArrayList<>();
         for (City neighbour : city.neighbors()) {
-            res.add(new Action.Move(neighbour));
+            res.add(new Move(neighbour));
         }
-        //res.add(new Action.Pickup());//TODO fix
+        if(s.getCityTask() != null){
+            res.add(new Pickup());
+        }
         return res;
     }
 
@@ -53,17 +53,25 @@ public class PolicyGenerator {
         City nextCity = nextState.getCity();
         Task nextCityTask = nextState.getCityTask();
 
-        if (action instanceof Action.Pickup) {
-            if (nextCity.equals(cityTask.getDestination())) {
-                //if you take a task, you go to the city of the task, so the destination city of the available task (current state) is the city of next state.
-                return 1;
-            } else return 0;
+        if (action instanceof Pickup) {
+            if(cityTask != null){
+                if(cityTask.getDestination() == nextCity){
+                    if (nextCityTask != null) {
+                        return td.probability(cityTask.getDestination(), nextCityTask.getDestination());
+                    } else {
+                        //probability that there is no task in next city
+                        //1-sum(P())
+                        double res = 1;
+                        for(City possibleCityTask: topology.cities()){
+                            res-= td.probability(cityTask.getDestination(), possibleCityTask);
+                        }
+                        return res;
+                    }
+                }
+            }
 
-        } else if (action instanceof Action.Move) {
-            //City destination = ((Action.Move) action).getDestination();//TODO fix
-            City destination = null;
-
-
+        } else if (action instanceof Move) {
+            City destination = ((Move) action).getDestination();
             if (nextCity.equals(city)) {
                 //cannot move to the same city
                 return 0;
@@ -77,13 +85,18 @@ public class PolicyGenerator {
                     return td.probability(nextCity, nextCityTask.getDestination());
                 } else {
                     //probability that there is no task in next city
-                    //TODO 1-sum(P())
-                    return 0;
+                    //1-sum(P())
+                    double res = 1;
+                    for(City possibleCityTask: topology.cities()){
+                        res-= td.probability(nextCity, possibleCityTask);
+                    }
+                    return res;
                 }
             }
         }
         return 0;
     }
+
 
     public HashMap<State, Action> generatePolicy(double discount) {
         //init V(s) arbitrarily
@@ -121,7 +134,7 @@ public class PolicyGenerator {
             Action bestAction = possibleActions.get(0);
             double bestQ = computeReward(s, bestAction, V, discount);
 
-            //find highest V action
+            //find highest Q action
             for (Action action : possibleActions) {
                 double currentQ = computeReward(s, action, V, discount);
                 if (currentQ > bestQ) {
@@ -136,7 +149,6 @@ public class PolicyGenerator {
     }
 
     private double computeReward(State s, Action a, HashMap<State, Double> V, double discount){
-        //TODO
         double sum = 0;
         for (State sp : possibleStates) {
             sum += T(s, a, sp) * 0;
@@ -150,6 +162,37 @@ public class PolicyGenerator {
             diffs.add(Math.abs(lastV.get(s) - V.get(s)));
         }
         return Collections.max(diffs);
+    }
+
+
+    //for debugging
+    public void displayT(){
+        for(State s : possibleStates){
+            for(Action a: getActionsFromState(s)){
+                double sumActions = 0;
+                String line = "";
+                for(State sp: possibleStates){
+                    String taskName;
+                    if(sp.getCityTask() != null){
+                        taskName = sp.getCityTask().getDestination().toString();
+                    }
+                    else taskName = "null";
+
+                    if(T(s, a, sp)!=0.0){
+                        line += sp.getCity()+ ", "+taskName+ " "+T(s, a, sp) + ",";
+                    }
+                    sumActions+=T(s, a, sp);
+                }
+                String taskName;
+                if(s.getCityTask() != null){
+                    taskName = s.getCityTask().getDestination().toString();
+                }
+                else taskName = "null";
+                System.out.println("state ("+ s.getCity()+ ", "+taskName+")->"+a.toString()+ ":");
+                System.out.println("("+line+")");
+                System.out.println(sumActions);
+            }
+        }
     }
 
 }
