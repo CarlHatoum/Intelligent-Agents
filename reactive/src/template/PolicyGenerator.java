@@ -16,7 +16,7 @@ public class PolicyGenerator {
     private TaskDistribution td;
     private final ArrayList<State> possibleStates;
 
-    public PolicyGenerator(Topology topology, TaskDistribution tdm) {
+    public PolicyGenerator(Topology topology, TaskDistribution td) {
         this.topology = topology;
         this.td = td;
         possibleStates = generateAllPossibleState();
