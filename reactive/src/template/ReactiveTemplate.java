@@ -1,5 +1,6 @@
 package template;
 
+import java.util.HashMap;
 import java.util.Random;
 
 import logist.simulation.Vehicle;
@@ -15,41 +16,45 @@ import logist.topology.Topology.City;
 
 public class ReactiveTemplate implements ReactiveBehavior {
 
-	private Random random;
-	private double pPickup;
-	private int numActions;
-	private Agent myAgent;
+    private Random random;
+    private double pPickup;
+    private int numActions;
+    private Agent myAgent;
 
-	@Override
-	public void setup(Topology topology, TaskDistribution td, Agent agent) {
+    private HashMap<State, Action> policy;
 
-		// Reads the discount factor from the agents.xml file.
-		// If the property is not present it defaults to 0.95
-		Double discount = agent.readProperty("discount-factor", Double.class,
-				0.95);
+    @Override
+    public void setup(Topology topology, TaskDistribution td, Agent agent) {
 
-		this.random = new Random();
-		this.pPickup = discount;
-		this.numActions = 0;
-		this.myAgent = agent;
-	}
+        // Reads the discount factor from the agents.xml file.
+        // If the property is not present it defaults to 0.95
+        Double discount = agent.readProperty("discount-factor", Double.class,
+                0.95);
 
-	@Override
-	public Action act(Vehicle vehicle, Task availableTask) {
-		Action action;
+        this.random = new Random();
+        this.pPickup = discount;
+        this.numActions = 0;
+        this.myAgent = agent;
 
-		if (availableTask == null || random.nextDouble() > pPickup) {
-			City currentCity = vehicle.getCurrentCity();
-			action = new Move(currentCity.randomNeighbor(random));
-		} else {
-			action = new Pickup(availableTask);
-		}
-		
-		if (numActions >= 1) {
-			System.out.println("The total profit after "+numActions+" actions is "+myAgent.getTotalProfit()+" (average profit: "+(myAgent.getTotalProfit() / (double)numActions)+")");
-		}
-		numActions++;
-		
-		return action;
-	}
+        policy = new PolicyGenerator(topology, td).generatePolicy(discount);
+    }
+
+    @Override
+    public Action act(Vehicle vehicle, Task availableTask) {
+        Action action;
+
+        if (availableTask == null || random.nextDouble() > pPickup) {
+            City currentCity = vehicle.getCurrentCity();
+            action = new Move(currentCity.randomNeighbor(random));
+        } else {
+            action = new Pickup(availableTask);
+        }
+
+        if (numActions >= 1) {
+            System.out.println("The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
+        }
+        numActions++;
+
+        return action;
+    }
 }
