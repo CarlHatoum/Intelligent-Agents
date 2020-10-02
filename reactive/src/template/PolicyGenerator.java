@@ -135,9 +135,9 @@ public class PolicyGenerator {
             //copy V
             lastV = new HashMap<>(V);
             for (State s : possibleStates) {
-                //find highest Q = computeReward() for all possible actions
+                //find highest Q for all possible actions
                 double maxQ = getActionsFromState(s).stream()
-                        .mapToDouble(a->computeReward(s, a, V, discount))
+                        .mapToDouble(a -> Q(s, a, V, discount))
                         .max()
                         .orElseThrow(NoSuchElementException::new);
                 V.put(s, maxQ);
@@ -149,20 +149,25 @@ public class PolicyGenerator {
         for (State s : possibleStates) {
             //find action that maximises computeReward()
             Action bestAction = getActionsFromState(s).stream()
-                    .max(Comparator.comparing(a->computeReward(s, a, V, discount)))
-                    .orElseThrow(NoSuchElementException::new);;
+                    .max(Comparator.comparing(a -> Q(s, a, V, discount)))
+                    .orElseThrow(NoSuchElementException::new);
             policy.put(s, bestAction);
         }
 
         return policy;
     }
 
-    private double computeReward(State s, Action a, HashMap<State, Double> V, double discount) {
+    public double R(State state, Action a){
+        //TODO
+        return 0;
+    }
+
+    private double Q(State s, Action a, HashMap<State, Double> V, double discount) {
         double sum = 0;
         for (State sp : possibleStates) {
-            sum += T(s, a, sp) * 0;
+            sum += T(s, a, sp) * V.get(sp);
         }
-        return 0;
+        return R(s, a) + discount*sum;
     }
 
     private double getError(HashMap<State, Double> V, HashMap<State, Double> lastV) {
