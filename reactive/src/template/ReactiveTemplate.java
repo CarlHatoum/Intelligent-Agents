@@ -20,7 +20,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
     private int numActions;
     private Agent myAgent;
 
-    private HashMap<State, Action> policy;
+    private HashMap<State, PolicyGenerator.Action> policy;
 
     @Override
     public void setup(Topology topology, TaskDistribution td, Agent agent) {
