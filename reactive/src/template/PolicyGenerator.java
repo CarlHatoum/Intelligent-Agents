@@ -147,7 +147,7 @@ public class PolicyGenerator {
         //generate policy from V
         HashMap<State, Action> policy = new HashMap<>();
         for (State s : possibleStates) {
-            //find action that maximises computeReward()
+            //find action that maximises Q()
             Action bestAction = getActionsFromState(s).stream()
                     .max(Comparator.comparing(a -> Q(s, a, V, discount)))
                     .orElseThrow(NoSuchElementException::new);
@@ -157,7 +157,7 @@ public class PolicyGenerator {
         return policy;
     }
 
-    public double R(State state, Action a){
+    public double R(State state, Action action) {
         //TODO
         return 0;
     }
@@ -167,7 +167,7 @@ public class PolicyGenerator {
         for (State sp : possibleStates) {
             sum += T(s, a, sp) * V.get(sp);
         }
-        return R(s, a) + discount*sum;
+        return R(s, a) + discount * sum;
     }
 
     private double getError(HashMap<State, Double> V, HashMap<State, Double> lastV) {
@@ -186,23 +186,14 @@ public class PolicyGenerator {
                 double sumActions = 0;
                 String line = "";
                 for (State sp : possibleStates) {
-                    String taskName;
-                    if (sp.getCityTask() != null) {
-                        taskName = sp.getCityTask().getDestination().toString();
-                    } else taskName = "null";
-
                     if (T(s, a, sp) != 0.0) {
-                        line += sp.getCity() + ", " + taskName + " " + T(s, a, sp) + ",";
+                        line += sp.toString() + ":" + T(s, a, sp) + ",";
                     }
                     sumActions += T(s, a, sp);
                 }
-                String taskName;
-                if (s.getCityTask() != null) {
-                    taskName = s.getCityTask().getDestination().toString();
-                } else taskName = "null";
-                System.out.println("state (" + s.getCity() + ", " + taskName + ")->" + a.toString() + ":");
+                System.out.println(s);
                 System.out.println("(" + line + ")");
-                System.out.println(sumActions);
+                System.out.println("sum: " + sumActions);
             }
         }
     }

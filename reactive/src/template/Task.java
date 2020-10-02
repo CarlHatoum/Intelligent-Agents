@@ -12,4 +12,9 @@ public class Task {
     public City getDestination() {
         return destination;
     }
+
+    @Override
+    public String toString() {
+        return "->" + destination;
+    }
 }

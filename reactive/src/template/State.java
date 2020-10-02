@@ -18,4 +18,10 @@ public class State {
     public Task getCityTask() {
         return cityTask;
     }
+
+    @Override
+    public String toString() {
+        if (cityTask == null) return "state (" + city + ", /)";
+        else return "state (" + city + ", " + cityTask + ")";
+    }
 }
