@@ -1,5 +1,6 @@
 package template;
 
+import logist.agent.Agent;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
@@ -7,6 +8,7 @@ import logist.topology.Topology.City;
 import java.util.*;
 
 public class PolicyGenerator {
+    private Agent agent;
     private Topology topology;
     private TaskDistribution td;
     private final ArrayList<State> possibleStates;
@@ -157,9 +159,15 @@ public class PolicyGenerator {
         return policy;
     }
 
-    public double R(State state, Action action) {
-        //TODO
-        return 0;
+    private double R(State state, Action action) {
+    	double cost = agent.readProperty("cost-per-km", double.class, 1.0);
+    	double reward = 0, loss = 0;
+    	if (action instanceof Pickup) {
+    		//take the task and receive the reward
+    		reward = td.reward(state.getCity(), state.getCityTask().getDestination());
+    	}
+    	loss = cost  * state.getCity().distanceTo(((Move) action).getDestination());
+    	return reward - loss;
     }
 
     private double Q(State s, Action a, HashMap<State, Double> V, double discount) {
