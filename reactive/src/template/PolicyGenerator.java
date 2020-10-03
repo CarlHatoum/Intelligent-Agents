@@ -8,7 +8,6 @@ import logist.topology.Topology.City;
 import java.util.*;
 
 public class PolicyGenerator {
-    private Agent agent;
     private Topology topology;
     private TaskDistribution td;
     private Agent agent;
