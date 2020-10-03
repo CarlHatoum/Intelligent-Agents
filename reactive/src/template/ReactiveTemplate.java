@@ -35,7 +35,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
         this.numActions = 0;
         this.myAgent = agent;
 
-        policy = new PolicyGenerator(topology, td).generatePolicy(discount);
+        policy = new PolicyGenerator(topology, td, agent).generatePolicy(discount);
         //new PolicyGenerator(topology, td).displayT();
     }
 
