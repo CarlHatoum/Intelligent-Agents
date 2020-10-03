@@ -11,6 +11,7 @@ public class PolicyGenerator {
     private Agent agent;
     private Topology topology;
     private TaskDistribution td;
+    private Agent agent;
     private final ArrayList<State> possibleStates;
 
     public abstract class Action {
@@ -38,9 +39,10 @@ public class PolicyGenerator {
         }
     }
 
-    public PolicyGenerator(Topology topology, TaskDistribution td) {
+    public PolicyGenerator(Topology topology, TaskDistribution td, Agent agent) {
         this.topology = topology;
         this.td = td;
+        this.agent = agent;
         possibleStates = generateAllPossibleState();
     }
 
@@ -160,13 +162,14 @@ public class PolicyGenerator {
     }
 
     private double R(State state, Action action) {
-    	double cost = agent.readProperty("cost-per-km", double.class, 1.0);
+    	
+    	double cost = agent.vehicles().get(0).costPerKm();
     	double reward = 0, loss = 0;
     	if (action instanceof Pickup) {
-    		//take the task and receive the reward
     		reward = td.reward(state.getCity(), state.getCityTask().getDestination());
+    	} else {
+    		loss =  cost * state.getCity().distanceTo(((Move) action).getDestination());
     	}
-    	loss = cost  * state.getCity().distanceTo(((Move) action).getDestination());
     	return reward - loss;
     }
 
