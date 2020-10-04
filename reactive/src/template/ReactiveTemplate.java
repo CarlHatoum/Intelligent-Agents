@@ -45,30 +45,29 @@ public class ReactiveTemplate implements ReactiveBehavior {
     @Override
     public logist.plan.Action act(Vehicle vehicle, Task availableTask) {
         logist.plan.Action action;
+        City dest;
         City currentCity = vehicle.getCurrentCity();
-        if (availableTask != null ) {
-        	City dest = availableTask.deliveryCity;
-			MyTask currentTask = new MyTask(dest);
-        	State currentState = new State(currentCity, currentTask);
-        	MyAction bestAction = policy.get(currentState);
-        	
-        if (bestAction instanceof MyPickup) {
-        	 	System.out.println("Pickup the task");
-        		action = new logist.plan.Action.Pickup(availableTask);
-        	} else {
-        		System.out.println("Move to a next city");
-            	action = new logist.plan.Action.Move(currentCity.randomNeighbor(random));
-        	}
+        MyTask currentTask;
+		if (availableTask != null ) {
+        	 dest = availableTask.deliveryCity;
+        	 currentTask = new MyTask(dest);
         } else {
-        	System.out.println("No tasks available, move to a next city");
-        	action = new logist.plan.Action.Move(currentCity.randomNeighbor(random));
+        	 currentTask = null;
         }
-    
+		
+        State currentState = new State(currentCity, currentTask);
+        MyAction bestAction = policy.get(currentState);
+        if (bestAction instanceof MyPickup) {
+        	System.out.println("Pickup the task, delivery to "+availableTask.deliveryCity);
+        	action = new logist.plan.Action.Pickup(availableTask);
+        } else {
+        	System.out.println("Move to next city : "+ ((MyMove) bestAction).getDestination());
+            action = new logist.plan.Action.Move(((MyMove) bestAction).getDestination());
+        }
         if (numActions >= 1) {
             System.out.println("The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
         }
         numActions++;
-
         return action;
     }
 }
