@@ -12,6 +12,9 @@ import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
+import template.PolicyGenerator.MyAction;
+import template.PolicyGenerator.MyMove;
+import template.PolicyGenerator.MyPickup;
 
 public class ReactiveTemplate implements ReactiveBehavior {
 
@@ -20,7 +23,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
     private int numActions;
     private Agent myAgent;
 
-    private HashMap<State, PolicyGenerator.Action> policy;
+    private HashMap<State, PolicyGenerator.MyAction> policy;
 
     @Override
     public void setup(Topology topology, TaskDistribution td, Agent agent) {
@@ -42,14 +45,25 @@ public class ReactiveTemplate implements ReactiveBehavior {
     @Override
     public logist.plan.Action act(Vehicle vehicle, Task availableTask) {
         logist.plan.Action action;
-
-        if (availableTask == null || random.nextDouble() > pPickup) {
-            City currentCity = vehicle.getCurrentCity();
-            action = new logist.plan.Action.Move(currentCity.randomNeighbor(random));
+        City currentCity = vehicle.getCurrentCity();
+        if (availableTask != null ) {
+        	City dest = availableTask.deliveryCity;
+			MyTask currentTask = new MyTask(dest);
+        	State currentState = new State(currentCity, currentTask);
+        	MyAction bestAction = policy.get(currentState);
+        	
+        if (bestAction instanceof MyPickup) {
+        	 	System.out.println("Pickup the task");
+        		action = new logist.plan.Action.Pickup(availableTask);
+        	} else {
+        		System.out.println("Move to a next city");
+            	action = new logist.plan.Action.Move(currentCity.randomNeighbor(random));
+        	}
         } else {
-            action = new logist.plan.Action.Pickup(availableTask);
+        	System.out.println("No tasks available, move to a next city");
+        	action = new logist.plan.Action.Move(currentCity.randomNeighbor(random));
         }
-
+    
         if (numActions >= 1) {
             System.out.println("The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
         }

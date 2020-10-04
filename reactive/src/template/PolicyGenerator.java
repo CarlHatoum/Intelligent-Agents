@@ -13,13 +13,13 @@ public class PolicyGenerator {
     private Agent agent;
     private final ArrayList<State> possibleStates;
 
-    public abstract class Action {
+    public abstract class MyAction {
     }
 
-    public class Move extends Action {
+    public class MyMove extends MyAction {
         private final City destination;
 
-        public Move(City destination) {
+        public MyMove(City destination) {
             this.destination = destination;
         }
 
@@ -32,7 +32,7 @@ public class PolicyGenerator {
         }
     }
 
-    public class Pickup extends Action {
+    public class MyPickup extends MyAction {
         public String toString() {
             return "pickup";
         }
@@ -50,7 +50,7 @@ public class PolicyGenerator {
         for (City city : topology.cities()) {
             for (City taskDestination : topology.cities()) {
                 if (taskDestination != city) {
-                    res.add(new State(city, new Task(taskDestination)));
+                    res.add(new State(city, new MyTask(taskDestination)));
                 }
             }
             res.add(new State(city, null));
@@ -58,28 +58,28 @@ public class PolicyGenerator {
         return res;
     }
 
-    public final ArrayList<Action> getActionsFromState(State s) {
+    public final ArrayList<MyAction> getActionsFromState(State s) {
         City city = s.getCity();
-        ArrayList<Action> res = new ArrayList<>();
+        ArrayList<MyAction> res = new ArrayList<>();
         for (City neighbour : city.neighbors()) {
-            res.add(new Move(neighbour));
+            res.add(new MyMove(neighbour));
         }
         if (s.getCityTask() != null) {
-            res.add(new Pickup());
+            res.add(new MyPickup());
         }
         return res;
     }
 
-    public double T(State state, Action action, State nextState) {
+    public double T(State state, MyAction action, State nextState) {
         //current state
         City city = state.getCity();
-        Task cityTask = state.getCityTask();
+        MyTask cityTask = state.getCityTask();
 
         //next state
         City nextCity = nextState.getCity();
-        Task nextCityTask = nextState.getCityTask();
+        MyTask nextCityTask = nextState.getCityTask();
 
-        if (action instanceof Pickup) {
+        if (action instanceof MyPickup) {
             if (cityTask != null) {
                 if (cityTask.getDestination().equals(nextCity)) {
                     if (nextCityTask != null) {
@@ -96,8 +96,8 @@ public class PolicyGenerator {
                 }
             }
 
-        } else if (action instanceof Move) {
-            City destination = ((Move) action).getDestination();
+        } else if (action instanceof MyMove) {
+            City destination = ((MyMove) action).getDestination();
             if (nextCity.equals(city)) {
                 //cannot move to the same city
                 return 0;
@@ -124,7 +124,7 @@ public class PolicyGenerator {
     }
 
 
-    public HashMap<State, Action> generatePolicy(double discount) {
+    public HashMap<State, MyAction> generatePolicy(double discount) {
         //init V(s) arbitrarily
         HashMap<State, Double> V = new HashMap<>();
         for (State s : possibleStates) {
@@ -148,10 +148,10 @@ public class PolicyGenerator {
         } while (getError(V, lastV) > epsilon);
 
         //generate policy from V
-        HashMap<State, Action> policy = new HashMap<>();
+        HashMap<State, MyAction> policy = new HashMap<>();
         for (State s : possibleStates) {
             //find action that maximises Q()
-            Action bestAction = getActionsFromState(s).stream()
+            MyAction bestAction = getActionsFromState(s).stream()
                     .max(Comparator.comparing(a -> Q(s, a, V, discount)))
                     .orElseThrow(NoSuchElementException::new);
             policy.put(s, bestAction);
@@ -160,19 +160,19 @@ public class PolicyGenerator {
         return policy;
     }
 
-    private double R(State state, Action action) {
+    private double R(State state, MyAction action) {
         double cost = agent.vehicles().get(0).costPerKm();
         double reward = 0, loss = 0;
-        if (action instanceof Pickup) {
+        if (action instanceof MyPickup) {
             reward = td.reward(state.getCity(), state.getCityTask().getDestination());
             loss = cost * state.getCity().distanceTo(state.getCityTask().getDestination());
         } else {
-            loss = cost * state.getCity().distanceTo(((Move) action).getDestination());
+            loss = cost * state.getCity().distanceTo(((MyMove) action).getDestination());
         }
         return (reward - loss);
     }
 
-    private double Q(State s, Action a, HashMap<State, Double> V, double discount) {
+    private double Q(State s, MyAction a, HashMap<State, Double> V, double discount) {
         double sum = 0;
         for (State sp : possibleStates) {
             sum += T(s, a, sp) * V.get(sp);
@@ -193,7 +193,7 @@ public class PolicyGenerator {
     //for debugging
     public void displayT() {
         for (State s : possibleStates) {
-            for (Action a : getActionsFromState(s)) {
+            for (MyAction a : getActionsFromState(s)) {
                 double sumActions = 0;
                 String line = "";
                 for (State sp : possibleStates) {
