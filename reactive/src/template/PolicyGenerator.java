@@ -81,7 +81,7 @@ public class PolicyGenerator {
 
         if (action instanceof Pickup) {
             if (cityTask != null) {
-                if (cityTask.getDestination() == nextCity) {
+                if (cityTask.getDestination().equals(nextCity)) {
                     if (nextCityTask != null) {
                         return td.probability(cityTask.getDestination(), nextCityTask.getDestination());
                     } else {
@@ -133,7 +133,7 @@ public class PolicyGenerator {
 
         //optimize V by Value iteration
         HashMap<State, Double> lastV;
-        double epsilon = 1;
+        double epsilon = 1e-14;
         do {
             //copy V
             lastV = new HashMap<>(V);
@@ -156,20 +156,20 @@ public class PolicyGenerator {
                     .orElseThrow(NoSuchElementException::new);
             policy.put(s, bestAction);
         }
-
+        System.out.println(policy);
         return policy;
     }
 
     private double R(State state, Action action) {
-    	
-    	double cost = agent.vehicles().get(0).costPerKm();
-    	double reward = 0, loss = 0;
-    	if (action instanceof Pickup) {
-    		reward = td.reward(state.getCity(), state.getCityTask().getDestination());
-    	} else {
-    		loss =  cost * state.getCity().distanceTo(((Move) action).getDestination());
-    	}
-    	return reward - loss;
+        double cost = agent.vehicles().get(0).costPerKm();
+        double reward = 0, loss = 0;
+        if (action instanceof Pickup) {
+            reward = td.reward(state.getCity(), state.getCityTask().getDestination());
+            loss = cost * state.getCity().distanceTo(state.getCityTask().getDestination());
+        } else {
+            loss = cost * state.getCity().distanceTo(((Move) action).getDestination());
+        }
+        return (reward - loss);
     }
 
     private double Q(State s, Action a, HashMap<State, Double> V, double discount) {
@@ -185,6 +185,7 @@ public class PolicyGenerator {
         for (State s : possibleStates) {
             diffs.add(Math.abs(lastV.get(s) - V.get(s)));
         }
+        System.out.println("error: " + Collections.max(diffs));
         return Collections.max(diffs);
     }
 
