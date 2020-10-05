@@ -2,6 +2,8 @@ package rla;
 
 import logist.topology.Topology.City;
 
+import java.util.Objects;
+
 public class MyTask {
     private City destination;
 
@@ -18,28 +20,16 @@ public class MyTask {
         return "->" + destination;
     }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((destination == null) ? 0 : destination.hashCode());
-		return result;
-	}
+    @Override
+    public int hashCode() {
+        return Objects.hash(getDestination());
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		MyTask other = (MyTask) obj;
-		if (destination == null) {
-			if (other.destination != null)
-				return false;
-		} else if (!destination.equals(other.destination))
-			return false;
-		return true;
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MyTask myTask = (MyTask) o;
+        return getDestination().equals(myTask.getDestination());
+    }
 }
