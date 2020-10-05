@@ -3,6 +3,7 @@ package rla;
 import java.util.HashMap;
 import java.util.Random;
 
+import logist.plan.Action;
 import logist.simulation.Vehicle;
 import logist.agent.Agent;
 import logist.behavior.ReactiveBehavior;
@@ -16,23 +17,20 @@ import rla.PolicyGenerator.MyPickup;
 
 public class ReactiveRLA implements ReactiveBehavior {
 
-    private Random random;
-    private double pPickup;
     private int numActions;
     private Agent myAgent;
+    Double discount;
 
-    private HashMap<State, PolicyGenerator.MyAction> policy;
+    private HashMap<State, MyAction> policy;
 
     @Override
     public void setup(Topology topology, TaskDistribution td, Agent agent) {
 
         // Reads the discount factor from the agents.xml file.
         // If the property is not present it defaults to 0.95
-        Double discount = agent.readProperty("discount-factor", Double.class,
+        discount = agent.readProperty("discount-factor", Double.class,
                 0.95);
 
-        this.random = new Random();
-        this.pPickup = discount;
         this.numActions = 0;
         this.myAgent = agent;
 
@@ -41,8 +39,8 @@ public class ReactiveRLA implements ReactiveBehavior {
     }
 
     @Override
-    public logist.plan.Action act(Vehicle vehicle, Task availableTask) {
-        logist.plan.Action action;
+    public Action act(Vehicle vehicle, Task availableTask) {
+        Action action;
         City dest;
         City currentCity = vehicle.getCurrentCity();
         MyTask currentTask;
@@ -56,14 +54,14 @@ public class ReactiveRLA implements ReactiveBehavior {
         State currentState = new State(currentCity, currentTask);
         MyAction bestAction = policy.get(currentState);
         if (bestAction instanceof MyPickup) {
-        	System.out.println("Pickup the task, delivery to "+availableTask.deliveryCity);
-        	action = new logist.plan.Action.Pickup(availableTask);
+        	//System.out.println("Pickup the task, delivery to "+availableTask.deliveryCity);
+        	action = new Action.Pickup(availableTask);
         } else {
-        	System.out.println("Move to next city : "+ ((MyMove) bestAction).getDestination());
-            action = new logist.plan.Action.Move(((MyMove) bestAction).getDestination());
+        	//System.out.println("Move to next city : "+ ((MyMove) bestAction).getDestination());
+            action = new Action.Move(((MyMove) bestAction).getDestination());
         }
         if (numActions >= 1) {
-            System.out.println("The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
+            System.out.println("Reactive agent "+ discount+ ": The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
         }
         numActions++;
         return action;

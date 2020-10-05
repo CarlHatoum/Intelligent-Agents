@@ -15,5 +15,11 @@
 		<set class-name="rla.ReactiveRLA"/>
 		<set discount-factor=".85"/>
 	</agent>
-	
+
+	<agent name="reactive-rla2">
+		<set class-path="bin/"/>
+		<set class-name="rla.ReactiveRLA"/>
+		<set discount-factor=".99"/>
+	</agent>
+
 </agents>
