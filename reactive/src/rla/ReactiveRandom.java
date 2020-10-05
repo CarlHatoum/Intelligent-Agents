@@ -45,7 +45,7 @@ public class ReactiveRandom implements ReactiveBehavior {
             action = new Pickup(availableTask);
         }
 
-        if (numActions >= 1) {
+        if (numActions == 300) {
             System.out.println("Random agent: The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
         }
         numActions++;
