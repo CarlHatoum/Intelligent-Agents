@@ -10,3 +10,5 @@ rabbits/sciper1-sciper2/.project
 rabbits/sciper1-sciper2/.classpath
 reactive/.idea/
 reactive/bin/
+reactive/history.xml
+reactive/.classpath

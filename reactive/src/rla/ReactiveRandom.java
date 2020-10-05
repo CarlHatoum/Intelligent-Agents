@@ -1,19 +1,19 @@
-package template;
+package rla;
 
-import java.util.Random;
-
-import logist.simulation.Vehicle;
 import logist.agent.Agent;
 import logist.behavior.ReactiveBehavior;
 import logist.plan.Action;
 import logist.plan.Action.Move;
 import logist.plan.Action.Pickup;
+import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-public class ReactiveTemplate implements ReactiveBehavior {
+import java.util.Random;
+
+public class ReactiveRandom implements ReactiveBehavior {
 
     private Random random;
     private double pPickup;
