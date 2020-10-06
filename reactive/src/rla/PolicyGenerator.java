@@ -7,6 +7,9 @@ import logist.topology.Topology.City;
 
 import java.util.*;
 
+/**
+ * Helper class to create the optimal policy of a ReactiveRLA agent
+ */
 public class PolicyGenerator {
     private Topology topology;
     private TaskDistribution td;
@@ -45,6 +48,9 @@ public class PolicyGenerator {
         possibleStates = generateAllPossibleState();
     }
 
+    /**
+     * returns the ArrayList containing every possible state
+     */
     public final ArrayList<State> generateAllPossibleState() {
         ArrayList<State> res = new ArrayList<>();
         for (City city : topology.cities()) {
@@ -58,6 +64,9 @@ public class PolicyGenerator {
         return res;
     }
 
+    /**
+     * returns an ArrayList containing every possible action that can be taken from given state
+     */
     public final ArrayList<MyAction> getActionsFromState(State s) {
         City city = s.getCity();
         ArrayList<MyAction> res = new ArrayList<>();
@@ -70,6 +79,26 @@ public class PolicyGenerator {
         return res;
     }
 
+    /**
+     * Reward table:
+     * returns the instantaneous reward for taking given action in given state
+     */
+    private double R(State state, MyAction action) {
+        double costPerKm = agent.vehicles().get(0).costPerKm();
+        double reward = 0, distance;
+        if (action instanceof MyPickup) {
+            reward = td.reward(state.getCity(), state.getCityTask().getDestination());
+            distance = costPerKm * state.getCity().distanceTo(state.getCityTask().getDestination());
+        } else {
+            distance = costPerKm * state.getCity().distanceTo(((MyMove) action).getDestination());
+        }
+        return (reward - costPerKm*distance);
+    }
+
+    /**
+     * Transition table:
+     * returns the probability to arrive in a certain state, by taking a given action in the given state
+     */
     public double T(State state, MyAction action, State nextState) {
         //current state
         City city = state.getCity();
@@ -123,7 +152,9 @@ public class PolicyGenerator {
         return 0;
     }
 
-
+    /**
+     * returns the optimal policy
+     */
     public HashMap<State, MyAction> generatePolicy(double discount) {
         //init V(s) arbitrarily
         HashMap<State, Double> V = new HashMap<>();
@@ -160,18 +191,10 @@ public class PolicyGenerator {
         return policy;
     }
 
-    private double R(State state, MyAction action) {
-        double cost = agent.vehicles().get(0).costPerKm();
-        double reward = 0, loss = 0;
-        if (action instanceof MyPickup) {
-            reward = td.reward(state.getCity(), state.getCityTask().getDestination());
-            loss = cost * state.getCity().distanceTo(state.getCityTask().getDestination());
-        } else {
-            loss = cost * state.getCity().distanceTo(((MyMove) action).getDestination());
-        }
-        return (reward - loss);
-    }
-
+    /**
+     * returns the reward for taking given action in given state, considering future rewards from table V,
+     * discounted by the given discount factor
+     */
     private double Q(State s, MyAction a, HashMap<State, Double> V, double discount) {
         double sum = 0;
         for (State sp : possibleStates) {
@@ -180,6 +203,9 @@ public class PolicyGenerator {
         return R(s, a) + discount * sum;
     }
 
+    /**
+     * metric used as stopping criterion for RLA
+     */
     private double getError(HashMap<State, Double> V, HashMap<State, Double> lastV) {
         ArrayList<Double> diffs = new ArrayList<>();
         for (State s : possibleStates) {
@@ -188,7 +214,6 @@ public class PolicyGenerator {
         System.out.println("error: " + Collections.max(diffs));
         return Collections.max(diffs);
     }
-
 
     //for debugging
     public void displayT() {
@@ -208,5 +233,4 @@ public class PolicyGenerator {
             }
         }
     }
-
 }

@@ -15,6 +15,9 @@ import rla.PolicyGenerator.MyAction;
 import rla.PolicyGenerator.MyMove;
 import rla.PolicyGenerator.MyPickup;
 
+/**
+ * Reactive Agent using a fixed policy, optimized using the Value Iteration method
+ */
 public class ReactiveRLA implements ReactiveBehavior {
 
     private int numActions;

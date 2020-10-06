@@ -13,6 +13,9 @@ import logist.topology.Topology.City;
 
 import java.util.Random;
 
+/**
+ * Reactive Agent that chooses to pickup up the task everytime, or moves to the closest city if none is available.
+ */
 public class ReactiveDummy implements ReactiveBehavior {
     private Random random;
     private int numActions;

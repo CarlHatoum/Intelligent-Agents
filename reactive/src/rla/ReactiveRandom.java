@@ -13,6 +13,9 @@ import logist.topology.Topology.City;
 
 import java.util.Random;
 
+/**
+ * Reactive Agent that chooses to pickup up available tasks with with a given probability, or moves to a random adjacent city.
+ */
 public class ReactiveRandom implements ReactiveBehavior {
 
     private Random random;
