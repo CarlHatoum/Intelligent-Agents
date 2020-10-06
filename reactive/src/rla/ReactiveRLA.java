@@ -63,8 +63,8 @@ public class ReactiveRLA implements ReactiveBehavior {
         	//System.out.println("Move to next city : "+ ((MyMove) bestAction).getDestination());
             action = new Action.Move(((MyMove) bestAction).getDestination());
         }
-        if (numActions == 300) {
-            System.out.println("Reactive agent "+ discount+ ": The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
+        if (numActions >= 1) {
+            //System.out.println("Reactive agent "+ discount+ ": The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
         }
         numActions++;
         return action;

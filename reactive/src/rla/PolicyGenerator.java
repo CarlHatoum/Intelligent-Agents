@@ -187,7 +187,8 @@ public class PolicyGenerator {
                     .orElseThrow(NoSuchElementException::new);
             policy.put(s, bestAction);
         }
-        System.out.println(policy);
+
+        //System.out.println(policy);
         return policy;
     }
 
@@ -204,18 +205,18 @@ public class PolicyGenerator {
     }
 
     /**
-     * metric used as stopping criterion for RLA
+     * metric used as stopping criterion for Value Iteration
      */
     private double getError(HashMap<State, Double> V, HashMap<State, Double> lastV) {
         ArrayList<Double> diffs = new ArrayList<>();
         for (State s : possibleStates) {
             diffs.add(Math.abs(lastV.get(s) - V.get(s)));
         }
-        System.out.println("error: " + Collections.max(diffs));
+        //System.out.println("error: " + Collections.max(diffs));
         return Collections.max(diffs);
     }
 
-    //for debugging
+    //for debugging and testing T()
     public void displayT() {
         for (State s : possibleStates) {
             for (MyAction a : getActionsFromState(s)) {

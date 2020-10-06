@@ -50,8 +50,8 @@ public class ReactiveDummy implements ReactiveBehavior {
             action = new Pickup(availableTask);
         }
 
-        if (numActions == 300) {
-            System.out.println("Dummy agent: The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
+        if (numActions >= 1) {
+            //System.out.println("Dummy agent: The total profit after " + numActions + " actions is " + myAgent.getTotalProfit() + " (average profit: " + (myAgent.getTotalProfit() / (double) numActions) + ")");
         }
         numActions++;
 
