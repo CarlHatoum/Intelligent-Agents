@@ -88,9 +88,9 @@ public class PolicyGenerator {
         double reward = 0, distance;
         if (action instanceof MyPickup) {
             reward = td.reward(state.getCity(), state.getCityTask().getDestination());
-            distance = costPerKm * state.getCity().distanceTo(state.getCityTask().getDestination());
+            distance = state.getCity().distanceTo(state.getCityTask().getDestination());
         } else {
-            distance = costPerKm * state.getCity().distanceTo(((MyMove) action).getDestination());
+            distance = state.getCity().distanceTo(((MyMove) action).getDestination());
         }
         return (reward - costPerKm*distance);
     }
