@@ -13,3 +13,6 @@ reactive/bin/
 reactive/history.xml
 reactive/.classpath
 rabbits/.project
+deliberative/out/
+deliberative/.idea/
+deliberative/history.xml
