@@ -11,7 +11,6 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
-import rla.PolicyGenerator.MyAction;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,6 +39,12 @@ public class Deliberative implements DeliberativeBehavior {
 
         public String toString() {
             return "moveTo" + destination;
+        }
+    }
+
+    public class MyPickup extends MyAction {
+        public String toString() {
+            return "pickup";
         }
     }
     
