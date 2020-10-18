@@ -11,6 +11,7 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
+import rla.PolicyGenerator.MyAction;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,6 +23,31 @@ import java.util.HashMap;
  */
 @SuppressWarnings("unused")
 public class Deliberative implements DeliberativeBehavior {
+	
+	public abstract class MyAction {
+    }
+
+    public class MyMove extends MyAction {
+        private final City destination;
+
+        public MyMove(City destination) {
+            this.destination = destination;
+        }
+
+        public City getDestination() {
+            return destination;
+        }
+
+        public String toString() {
+            return "moveTo" + destination;
+        }
+    }
+    
+    public class MyDeliver extends MyAction {
+        public String toString() {
+            return "deliver";
+        }
+    }
 
     enum Algorithm {BFS, ASTAR}
 
