@@ -8,19 +8,19 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public class Node {
-
-    private City city;
     private Node parent;
     private double gCost;
-    private MyAction action; //action that led to this node
-    private TaskSet carriedTasks;
-    private TaskSet remainingTasks; //tasks left that are not currently being carried
     private final double maxCapacity;
 
-    public Node(Node parent, City city, MyAction action, TaskSet carriedTasks, TaskSet remainingTasks, double maxCapacity) {
+    //state
+    private City city;
+    private TaskSet carriedTasks;
+    private TaskSet remainingTasks; //tasks left that are not currently being carried
+
+
+    public Node(Node parent, City city, TaskSet carriedTasks, TaskSet remainingTasks, double maxCapacity) {
         this.parent = parent;
         this.city = city;
-        this.action = action;
         this.carriedTasks = carriedTasks;
         this.remainingTasks = remainingTasks;
         if (parent != null) {
@@ -44,14 +44,13 @@ public class Node {
         for (Task task : remainingTasks) {
             if (task.pickupCity.equals(this.getCity())) {
                 if (getCurrentWeight() + task.weight <= maxCapacity) {
-                    MyAction action = new MyPickup(task);
-
+                    //delivery action
                     TaskSet remainingTasks = this.getRemainingTasks().clone();
                     remainingTasks.remove(task);
                     TaskSet carriedTasks = this.getCarriedTasks().clone();
                     carriedTasks.add(task);
 
-                    Node child = new Node(this, this.city, action, carriedTasks, remainingTasks, maxCapacity);
+                    Node child = new Node(this, this.city, carriedTasks, remainingTasks, maxCapacity);
                     children.add(child);
                 }
             }
@@ -59,21 +58,19 @@ public class Node {
 
         for (Task task : carriedTasks) {
             if (task.deliveryCity.equals(this.getCity())) {
-                MyAction action = new MyDeliver(task);
-
+                //pickup action
                 TaskSet remainingTasks = this.getRemainingTasks().clone();
                 TaskSet carriedTasks = this.getCarriedTasks().clone();
                 carriedTasks.remove(task);
 
-                Node child = new Node(this, this.city, action, carriedTasks, remainingTasks, maxCapacity);
+                Node child = new Node(this, this.city, carriedTasks, remainingTasks, maxCapacity);
                 children.add(child);
             }
         }
 
         for (City neighbor : city.neighbors()) {
-            MyAction action = new MyMove(neighbor);
-
-            Node child = new Node(this, neighbor, action, this.getCarriedTasks(), this.getRemainingTasks(), maxCapacity);
+            //move action
+            Node child = new Node(this, neighbor, this.getCarriedTasks(), this.getRemainingTasks(), maxCapacity);
             children.add(child);
         }
 
@@ -108,17 +105,12 @@ public class Node {
         return sum;
     }
 
-    public MyAction getAction() {
-        return action;
-    }
-
     @Override
     public String toString() {
         return "Node{" +
                 "city=" + city +
                 ", parent=" + ((parent == null) ? "" : parent.getCity()) +
                 ", gCost=" + gCost +
-                ", action=" + action +
                 ", carriedTasks=" + carriedTasks +
                 ", remainingTasks=" + remainingTasks +
                 '}';

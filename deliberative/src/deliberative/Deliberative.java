@@ -76,16 +76,16 @@ public class Deliberative implements DeliberativeBehavior {
         System.out.println("generating A* plan");
         long startTime = System.nanoTime();
 
-        ArrayList<MyAction> plan = new ArrayList<>();
         City currentCity = vehicle.getCurrentCity();
 
-        Node initialNode = new Node(null, currentCity, null, vehicle.getCurrentTasks(), tasks, vehicle.capacity());
+        Node initialNode = new Node(null, currentCity, vehicle.getCurrentTasks(), tasks, vehicle.capacity());
 
         ArrayList<Node> Q = new ArrayList<>(); //queue of nodes to be processed
         ArrayList<Node> C = new ArrayList<>(); //processed nodes
 
         Q.add(initialNode);
 
+        Plan plan = new Plan(currentCity);
         while (!Q.isEmpty()) {
             //pop first node in queue
             Node n = Q.remove(0);
@@ -93,12 +93,7 @@ public class Deliberative implements DeliberativeBehavior {
             if (n.isGoalState()) {
                 //found the solution
                 //generate the action List to get to the state n
-                Node currentNode = n;
-                do {
-                    //insert the action that led to this node at the beginning
-                    plan.add(0, currentNode.getAction());
-                    currentNode = currentNode.getParent();
-                } while (currentNode != initialNode);
+                plan = generatePlan(currentCity, n);
                 break;
             }
 
@@ -114,16 +109,11 @@ public class Deliberative implements DeliberativeBehavior {
                 ));
             }
         }
-
-        if (plan.isEmpty()) {
-            System.out.println("Error: no path found");
-        }
-
-        Plan convertedPlan = convertPlan(currentCity, plan);
         System.out.println("finished A*");
+        System.out.println(plan);
         System.out.println("time to compute: " + (System.nanoTime() - startTime) / 1e6 + "ms");
         System.out.println("visited nodes:" + C.size());
-        return convertedPlan;
+        return plan;
     }
 
     /**
@@ -160,24 +150,41 @@ public class Deliberative implements DeliberativeBehavior {
             return n.getRemainingTasks().stream().mapToDouble(task -> task.pickupCity.distanceTo(task.deliveryCity)).max().orElseThrow();
     }
 
-    /**
-     * convert the plan from a list of MyAction to a Plan object
-     */
-    private Plan convertPlan(City initialCity, ArrayList<MyAction> myPlan) {
-        Plan plan = new Plan(initialCity);
 
-        for (MyAction action : myPlan) {
-            if (action instanceof MyPickup) {
-                plan.appendPickup(((MyPickup) action).getTask());
-            } else if (action instanceof MyDeliver) {
-                plan.appendDelivery(((MyDeliver) action).getTask());
-            } else if (action instanceof MyMove) {
-                plan.appendMove(((MyMove) action).getDestination());
+    private Plan generatePlan(City initialCity, Node endNode){
+        Plan plan = new Plan(initialCity);
+        ArrayList<Node> path = new ArrayList<>();
+        Node currentNode = endNode;
+        do {
+            path.add(0, currentNode);
+            currentNode = currentNode.getParent();
+        } while (currentNode.getParent()!=null);
+        path.add(0, currentNode);
+
+        for(int i = 0;i<path.size()-1; i++){
+            Node node = path.get(i);
+            Node nextNode = path.get(i+1);
+
+            TaskSet carriedTasks = node.getCarriedTasks().clone();
+            TaskSet carriedTasksNext = nextNode.getCarriedTasks().clone();
+
+            if(!node.getCity().equals(nextNode.getCity())){
+                //if the city changed -> move
+                plan.appendMove(nextNode.getCity());
+            }
+            else if(carriedTasksNext.size() < carriedTasks.size()){
+                //lost a task -> delivery
+                carriedTasks.removeAll(carriedTasksNext);
+                Task task = carriedTasks.iterator().next();
+                plan.appendDelivery(task);
+            }
+            else if(node.getCarriedTasks().size() < nextNode.getCarriedTasks().size()){
+                //gained a task -> pickup
+                carriedTasksNext.removeAll(carriedTasks);
+                Task task = carriedTasksNext.iterator().next();
+                plan.appendPickup(task);
             }
         }
-
-        System.out.println("plan total distance: " + plan.totalDistance());
-        System.out.println(plan);
         return plan;
     }
 
