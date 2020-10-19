@@ -68,8 +68,53 @@ public class Deliberative implements DeliberativeBehavior {
     }
 
     private Plan bfsPlan(Vehicle vehicle, TaskSet tasks) {
-        //TODO
-        return null;
+    	System.out.println("generating BFS plan");
+    	Map<Plan, Double> plans = new HashMap<Plan, Double>(); //map of plans and their costs
+        City currentCity = vehicle.getCurrentCity();
+
+        Node initialNode = new Node(null, currentCity, vehicle.getCurrentTasks(), tasks, vehicle.capacity());
+        
+        ArrayList<Node> Q = new ArrayList<>(); //queue of nodes to be processed
+        ArrayList<Node> C = new ArrayList<>(); //processed nodes
+
+        Q.add(initialNode);
+        
+        while (!Q.isEmpty()) {
+        	//pop first node in queue
+            Node n = Q.remove(0);
+            
+            if(n.isGoalState()) {
+            	//found a plan
+            	Plan plan = generatePlan(currentCity, n);
+                plans.put(plan, n.getGCost());
+                break;
+            }
+            //check if node was visited
+            if (!C.contains(n)) {
+            	C.add(n);
+            	//add all the children of n to the queue
+                Q.addAll(n.generateChildren());
+            }
+             
+        }
+        if (plans.isEmpty()) {
+            System.out.println("Error: no path found");
+        }
+        // get the optimal plan
+        Plan plan = getOptimalPlan(plans);
+        System.out.println("finished BFS");
+        return plan;
+    }
+    
+    //return the plan with lowest cost
+    private Plan getOptimalPlan(Map<Plan, Double> plans){
+    	Map.Entry<Plan, Double> min = null;   	
+    	for (Map.Entry<Plan, Double> entry : plans.entrySet()) {
+    		if (min == null || entry.getValue() < min.getValue()) {
+    	        min = entry;
+    	    }
+        }
+		return min.getKey();
     }
 
     private Plan aStarPlan(Vehicle vehicle, TaskSet tasks) {
