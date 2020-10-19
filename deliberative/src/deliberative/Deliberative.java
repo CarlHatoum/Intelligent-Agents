@@ -13,6 +13,7 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.util.*;
+import java.util.function.ToDoubleFunction;
 
 /**
  * An optimal planner for one vehicle.
@@ -53,6 +54,7 @@ public class Deliberative implements DeliberativeBehavior {
     public Plan plan(Vehicle vehicle, TaskSet tasks) {
         Plan plan;
 
+        long startTime = System.nanoTime();
         // Compute the plan with the selected algorithm.
         switch (algorithm) {
             case ASTAR:
@@ -64,12 +66,18 @@ public class Deliberative implements DeliberativeBehavior {
             default:
                 throw new AssertionError("Should not happen.");
         }
+
+        System.out.println(plan);
+        System.out.println(plan.totalDistance());
+        System.out.println("time to compute: " + (System.nanoTime() - startTime) / 1e6 + "ms");
+
         return plan;
     }
 
     private Plan bfsPlan(Vehicle vehicle, TaskSet tasks) {
     	System.out.println("generating BFS plan");
-    	Map<Plan, Double> plans = new HashMap<Plan, Double>(); //map of plans and their costs
+
+    	Map<Plan, Double> plans = new HashMap<>(); //map of plans and their costs
         City currentCity = vehicle.getCurrentCity();
 
         Node initialNode = new Node(null, currentCity, vehicle.getCurrentTasks(), tasks, vehicle.capacity());
@@ -78,7 +86,7 @@ public class Deliberative implements DeliberativeBehavior {
         ArrayList<Node> C = new ArrayList<>(); //processed nodes
 
         Q.add(initialNode);
-        
+
         while (!Q.isEmpty()) {
         	//pop first node in queue
             Node n = Q.remove(0);
@@ -87,10 +95,9 @@ public class Deliberative implements DeliberativeBehavior {
             	//found a plan
             	Plan plan = generatePlan(currentCity, n);
                 plans.put(plan, n.getGCost());
-                break;
             }
             //check if node was visited
-            if (!C.contains(n)) {
+            if (isLowestCostForState(C,n, node -> node.getGCost())) {
             	C.add(n);
             	//add all the children of n to the queue
                 Q.addAll(n.generateChildren());
@@ -103,9 +110,10 @@ public class Deliberative implements DeliberativeBehavior {
         // get the optimal plan
         Plan plan = getOptimalPlan(plans);
         System.out.println("finished BFS");
+        System.out.println("visited nodes:" + C.size());
         return plan;
     }
-    
+
     //return the plan with lowest cost
     private Plan getOptimalPlan(Map<Plan, Double> plans){
     	Map.Entry<Plan, Double> min = null;   	
@@ -142,7 +150,7 @@ public class Deliberative implements DeliberativeBehavior {
                 break;
             }
 
-            if (!C.contains(n) || (C.contains(n) && n.getGCost() + h(n) < getBestFCost(C, n))) {
+            if (isLowestCostForState(C, n, node -> node.getGCost() + h(node))) {
                 C.add(n);
 
                 //add all the children of n to the queue
@@ -155,27 +163,28 @@ public class Deliberative implements DeliberativeBehavior {
             }
         }
         System.out.println("finished A*");
-        System.out.println(plan);
-        System.out.println("time to compute: " + (System.nanoTime() - startTime) / 1e6 + "ms");
         System.out.println("visited nodes:" + C.size());
         return plan;
     }
 
     /**
-     * return node in list with lowest fcost
+     * return true if the list doesn't contain the node or if it does contain it but with a higher cost.
+     * In the latter case, remove the higher cost node from the list
      */
-    private double getBestFCost(ArrayList<Node> list, Node node) {
-        //TODO simplify this function
-        ArrayList<Node> copies = new ArrayList<>();
-        for (Node n : list) {
-            if (n.equals(node)) {
-                copies.add(n);
+    private boolean isLowestCostForState(ArrayList<Node> list, Node n, ToDoubleFunction<Node> costFunction) {
+        if(!list.contains(n)){
+            return true;
+        }
+        else{
+            Node currentBest = list.get(list.indexOf(n));
+            if(costFunction.applyAsDouble(n) < costFunction.applyAsDouble(currentBest)){
+                list.remove(currentBest);
+                return true;
+            }
+            else{
+                return false;
             }
         }
-        return copies.stream()
-                .mapToDouble(node2 -> node2.getGCost() + h(node2))
-                .min()
-                .orElseThrow(NoSuchElementException::new);
     }
 
     /**
