@@ -5,26 +5,29 @@ import logist.task.TaskSet;
 import logist.topology.Topology.City;
 
 import java.util.ArrayList;
-
-import deliberative.Deliberative.MyAction;
-import deliberative.Deliberative.MyDeliver;
-import deliberative.Deliberative.MyMove;
-import deliberative.Deliberative.MyPickup;
+import java.util.Objects;
 
 public class Node {
-	
+
     private City city;
     private Node parent;
     private double gCost;
+    private MyAction action; //action that led to this node
     private TaskSet carriedTasks;
-    private TaskSet remainingTasks;
+    private TaskSet remainingTasks; //tasks left that are not currently being carried
+    private final double maxCapacity;
 
-    public Node(Node parent, City city, TaskSet carriedTasks, TaskSet remainingTasks) {
+    public Node(Node parent, City city, MyAction action, TaskSet carriedTasks, TaskSet remainingTasks, double maxCapacity) {
         this.parent = parent;
         this.city = city;
+        this.action = action;
         this.carriedTasks = carriedTasks;
         this.remainingTasks = remainingTasks;
-        gCost = parent.getGCost() + getTransitionCost(parent, this);
+        if (parent != null) {
+            gCost = parent.getGCost() + getTransitionCost(parent, this);
+        } else gCost = 0;
+
+        this.maxCapacity = maxCapacity;
     }
 
     public City getCity() {
@@ -35,66 +38,104 @@ public class Node {
         return parent;
     }
 
-    public ArrayList<Node> generateChildren(MyAction action) {
+    public ArrayList<Node> generateChildren() {
         ArrayList<Node> children = new ArrayList<>();
-            
-        if (action instanceof MyDeliver) {
-        	for (Task task : carriedTasks) {
-        		if (task.deliveryCity == this.getCity()) {
-            		this.carriedTasks.remove(task);
-            	}
-        		Node child = new Node(this, this.city, this.getCarriedTasks(), this.getRemainingTasks());
-            	children.add(child);
-        	}
-        
+
+        for (Task task : remainingTasks) {
+            if (task.pickupCity.equals(this.getCity())) {
+                if (getCurrentWeight() + task.weight <= maxCapacity) {
+                    MyAction action = new MyPickup(task);
+
+                    TaskSet remainingTasks = this.getRemainingTasks().clone();
+                    remainingTasks.remove(task);
+                    TaskSet carriedTasks = this.getCarriedTasks().clone();
+                    carriedTasks.add(task);
+
+                    Node child = new Node(this, this.city, action, carriedTasks, remainingTasks, maxCapacity);
+                    children.add(child);
+                }
+            }
         }
-        if (action instanceof MyPickup) {
-        	for (Task task : remainingTasks) {
-        		if (task.pickupCity == this.getCity()) {
-        			this.remainingTasks.remove(task);
-            		this.carriedTasks.add(task);
-            	}
-        		Node child = new Node(this, this.city, this.getCarriedTasks(), this.getRemainingTasks());
-            	children.add(child);
-        	}
+
+        for (Task task : carriedTasks) {
+            if (task.deliveryCity.equals(this.getCity())) {
+                MyAction action = new MyDeliver(task);
+
+                TaskSet remainingTasks = this.getRemainingTasks().clone();
+                TaskSet carriedTasks = this.getCarriedTasks().clone();
+                carriedTasks.remove(task);
+
+                Node child = new Node(this, this.city, action, carriedTasks, remainingTasks, maxCapacity);
+                children.add(child);
+            }
         }
-        if (action instanceof MyMove) {
-        	for (City neighbor : city.neighbors()) {
-        		Node child = new Node(this, neighbor, this.getCarriedTasks(), this.getRemainingTasks());
-        		children.add(child);
-        	}
+
+        for (City neighbor : city.neighbors()) {
+            MyAction action = new MyMove(neighbor);
+
+            Node child = new Node(this, neighbor, action, this.getCarriedTasks(), this.getRemainingTasks(), maxCapacity);
+            children.add(child);
         }
+
         return children;
     }
 
-	public double getGCost() {
+    public double getGCost() {
         return gCost;
     }
 
     static public double getTransitionCost(Node startNode, Node endNode) {
-    	return startNode.city.distanceTo(endNode.city);
+        return startNode.city.distanceTo(endNode.city);
     }
 
-	public TaskSet getRemainingTasks() {
-		return remainingTasks;
-	}
+    public TaskSet getRemainingTasks() {
+        return remainingTasks;
+    }
 
-	public void setRemainingTasks(TaskSet remainingTasks) {
-		this.remainingTasks = remainingTasks;
-	}
-	
-	public boolean isGoalState() {
-		return remainingTasks.isEmpty() && carriedTasks.isEmpty();
-		
-	}
+    public boolean isGoalState() {
+        return remainingTasks.isEmpty() && carriedTasks.isEmpty();
+    }
 
-	public TaskSet getCarriedTasks() {
-		return carriedTasks;
-	}
+    public TaskSet getCarriedTasks() {
+        return carriedTasks;
+    }
 
-	public void setCarriedTasks(TaskSet carriedTasks) {
-		this.carriedTasks = carriedTasks;
-	}
+    public double getCurrentWeight() {
+        double sum = 0;
+        for (Task task : carriedTasks) {
+            sum += task.weight;
+        }
+        return sum;
+    }
 
+    public MyAction getAction() {
+        return action;
+    }
 
+    @Override
+    public String toString() {
+        return "Node{" +
+                "city=" + city +
+                ", parent=" + ((parent == null) ? "" : parent.getCity()) +
+                ", gCost=" + gCost +
+                ", action=" + action +
+                ", carriedTasks=" + carriedTasks +
+                ", remainingTasks=" + remainingTasks +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Node node = (Node) o;
+        return getCity().equals(node.getCity()) &&
+                getCarriedTasks().equals(node.getCarriedTasks()) &&
+                getRemainingTasks().equals(node.getRemainingTasks());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getCity(), getCarriedTasks(), getRemainingTasks());
+    }
 }

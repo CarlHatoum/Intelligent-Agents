@@ -6,8 +6,8 @@
 	<!-- #### DELIBERATIVE AGENTS ### -->
 	<agent name="deliberative-random">
 		<set class-path="bin/"/>
-		<set class-name="template.DeliberativeTemplate"/>
-		<set algorithm="BFS"/>
+		<set class-name="deliberative.Deliberative"/>
+		<set algorithm="ASTAR"/>
 	</agent>
 	
 </agents>

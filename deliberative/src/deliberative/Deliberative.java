@@ -12,47 +12,13 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * An optimal planner for one vehicle.
  */
 @SuppressWarnings("unused")
 public class Deliberative implements DeliberativeBehavior {
-	
-	public abstract class MyAction {
-    }
-
-    public class MyMove extends MyAction {
-        private final City destination;
-
-        public MyMove(City destination) {
-            this.destination = destination;
-        }
-
-        public City getDestination() {
-            return destination;
-        }
-
-        public String toString() {
-            return "moveTo" + destination;
-        }
-    }
-
-    public class MyPickup extends MyAction {
-        public String toString() {
-            return "pickup";
-        }
-    }
-    
-    public class MyDeliver extends MyAction {
-        public String toString() {
-            return "deliver";
-        }
-    }
 
     enum Algorithm {BFS, ASTAR}
 
@@ -107,52 +73,112 @@ public class Deliberative implements DeliberativeBehavior {
     }
 
     private Plan aStarPlan(Vehicle vehicle, TaskSet tasks) {
-        City current = vehicle.getCurrentCity();
-        Plan plan = new Plan(current);
+        System.out.println("generating A* plan");
+        long startTime = System.nanoTime();
 
-        Node initialNode = new Node(null, current);
+        ArrayList<MyAction> plan = new ArrayList<>();
+        City currentCity = vehicle.getCurrentCity();
+
+        Node initialNode = new Node(null, currentCity, null, vehicle.getCurrentTasks(), tasks, vehicle.capacity());
 
         ArrayList<Node> Q = new ArrayList<>(); //queue of nodes to be processed
         ArrayList<Node> C = new ArrayList<>(); //processed nodes
 
-        HashMap<Node, Double> gCost = new HashMap<>();
-
         Q.add(initialNode);
 
         while (!Q.isEmpty()) {
-            Node n = Q.get(0);
-            if (goalReached(n)) {
+            //pop first node in queue
+            Node n = Q.remove(0);
+
+            if (n.isGoalState()) {
+                //found the solution
+                //generate the action List to get to the state n
                 Node currentNode = n;
                 do {
-                    //TODO add action to plan
+                    //insert the action that led to this node at the beginning
+                    plan.add(0, currentNode.getAction());
                     currentNode = currentNode.getParent();
                 } while (currentNode != initialNode);
                 break;
             }
 
-            if (!C.contains(n)) {
+            if (!C.contains(n) || (C.contains(n) && n.getGCost() + h(n) < getBestFCost(C, n))) {
                 C.add(n);
-                ArrayList<Node> children = n.generateChildren();
 
-                children.sort(Comparator.comparingDouble(
+                //add all the children of n to the queue
+                Q.addAll(n.generateChildren());
+
+                //sort according to the estimated total cost
+                Q.sort(Comparator.comparingDouble(
                         x -> x.getGCost() + h(x)
                 ));
-
-                Q.addAll(children);
             }
         }
-        return plan;
+
+        if (plan.isEmpty()) {
+            System.out.println("Error: no path found");
+        }
+
+        Plan convertedPlan = convertPlan(currentCity, plan);
+        System.out.println("finished A*");
+        System.out.println("time to compute: " + (System.nanoTime() - startTime) / 1e6 + "ms");
+        System.out.println("visited nodes:" + C.size());
+        return convertedPlan;
     }
 
+    /**
+     * return node in list with lowest fcost
+     */
+    private double getBestFCost(ArrayList<Node> list, Node node) {
+        //TODO simplify this function
+        ArrayList<Node> copies = new ArrayList<>();
+        for (Node n : list) {
+            if (n.equals(node)) {
+                copies.add(n);
+            }
+        }
+        return copies.stream()
+                .mapToDouble(node2 -> node2.getGCost() + h(node2))
+                .min()
+                .orElseThrow(NoSuchElementException::new);
+    }
+
+    /**
+     * heuristic: the distance of the longest task if there are any left
+     */
     private double h(Node n) {
-        //heuristic
-        //TODO
-        return 0.0;
+        if (n.getRemainingTasks().isEmpty()) {
+            if (n.getCarriedTasks().isEmpty()) {
+                return 0.0;
+            }
+            //return the distance from the current city to the city of the furthest carried task
+            else
+                return n.getCarriedTasks().stream().mapToDouble(task -> n.getCity().distanceTo(task.deliveryCity)).max().orElseThrow();
+        }
+        //return the distance of the longest remaining task
+        else
+            return n.getRemainingTasks().stream().mapToDouble(task -> task.pickupCity.distanceTo(task.deliveryCity)).max().orElseThrow();
     }
 
-    public boolean goalReached(Node currentNode) {
-        //TODO
-        return false;
+    /**
+     * convert the plan from a list of MyAction to a Plan object
+     */
+    private Plan convertPlan(City initialCity, ArrayList<MyAction> myPlan) {
+        Plan plan = new Plan(initialCity);
+
+        for (MyAction action : myPlan) {
+            if (action instanceof MyPickup) {
+                plan.appendPickup(((MyPickup) action).getTask());
+            } else if (action instanceof MyDeliver) {
+                plan.appendDelivery(((MyDeliver) action).getTask());
+            } else if (action instanceof MyMove) {
+                plan.appendMove(((MyMove) action).getDestination());
+            }
+        }
+
+        System.out.println("plan total distance: " + plan.totalDistance());
+        System.out.println(plan);
+        return plan;
     }
 
     private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
@@ -180,7 +206,7 @@ public class Deliberative implements DeliberativeBehavior {
 
     @Override
     public void planCancelled(TaskSet carriedTasks) {
-
+        System.out.println("plan cancelled");
         if (!carriedTasks.isEmpty()) {
             // This cannot happen for this simple agent, but typically
             // you will need to consider the carriedTasks when the next
