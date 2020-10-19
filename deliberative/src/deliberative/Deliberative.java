@@ -81,19 +81,19 @@ public class Deliberative implements DeliberativeBehavior {
         City currentCity = vehicle.getCurrentCity();
 
         Node initialNode = new Node(null, currentCity, vehicle.getCurrentTasks(), tasks, vehicle.capacity());
-        
-        ArrayList<Node> Q = new ArrayList<>(); //queue of nodes to be processed
+
+        LinkedList<Node> Q = new LinkedList<>(); //queue of nodes to be processed
         ArrayList<Node> C = new ArrayList<>(); //processed nodes
 
         Q.add(initialNode);
 
         while (!Q.isEmpty()) {
         	//pop first node in queue
-            Node n = Q.remove(0);
+            Node n = Q.pop();
             
-            if(n.isGoalState()) {
+            if(n.isFinalState()) {
             	//found a plan
-            	Plan plan = generatePlan(currentCity, n);
+            	Plan plan = generatePlanFromLastNode(n);
                 plans.put(plan, n.getGCost());
             }
             //check if node was visited
@@ -127,13 +127,14 @@ public class Deliberative implements DeliberativeBehavior {
 
     private Plan aStarPlan(Vehicle vehicle, TaskSet tasks) {
         System.out.println("generating A* plan");
-        long startTime = System.nanoTime();
 
         City currentCity = vehicle.getCurrentCity();
 
         Node initialNode = new Node(null, currentCity, vehicle.getCurrentTasks(), tasks, vehicle.capacity());
 
-        ArrayList<Node> Q = new ArrayList<>(); //queue of nodes to be processed
+        PriorityQueue<Node> Q = new PriorityQueue<>(Comparator.comparingDouble(
+                x -> x.getGCost() + h(x)
+        )); //queue of nodes to be processed, sorted according to f value
         ArrayList<Node> C = new ArrayList<>(); //processed nodes
 
         Q.add(initialNode);
@@ -141,12 +142,12 @@ public class Deliberative implements DeliberativeBehavior {
         Plan plan = new Plan(currentCity);
         while (!Q.isEmpty()) {
             //pop first node in queue
-            Node n = Q.remove(0);
-
-            if (n.isGoalState()) {
+            Node n = Q.poll();
+//            System.out.println(n.getGCost() + h(n));
+            if (n.isFinalState()) {
                 //found the solution
                 //generate the action List to get to the state n
-                plan = generatePlan(currentCity, n);
+                plan = generatePlanFromLastNode(n);
                 break;
             }
 
@@ -155,11 +156,7 @@ public class Deliberative implements DeliberativeBehavior {
 
                 //add all the children of n to the queue
                 Q.addAll(n.generateChildren());
-
-                //sort according to the estimated total cost
-                Q.sort(Comparator.comparingDouble(
-                        x -> x.getGCost() + h(x)
-                ));
+                //the queue is a PriorityQueue, thus it is always sorted
             }
         }
         System.out.println("finished A*");
@@ -188,25 +185,28 @@ public class Deliberative implements DeliberativeBehavior {
     }
 
     /**
-     * heuristic: the distance of the longest task if there are any left
+     * heuristic: distance of the task with the longest required distance (distance to get to the pickup city + distance of task)
+     * if no task remaining, distance left of a random task
      */
     private double h(Node n) {
         if (n.getRemainingTasks().isEmpty()) {
             if (n.getCarriedTasks().isEmpty()) {
                 return 0.0;
             }
-            //return the distance from the current city to the city of the furthest carried task
             else
-                return n.getCarriedTasks().stream().mapToDouble(task -> n.getCity().distanceTo(task.deliveryCity)).max().orElseThrow();
+                return n.getCity().distanceTo(n.getCarriedTasks().iterator().next().deliveryCity);
         }
-        //return the distance of the longest remaining task
-        else
-            return n.getRemainingTasks().stream().mapToDouble(task -> task.pickupCity.distanceTo(task.deliveryCity)).max().orElseThrow();
+        else{
+            return n.getRemainingTasks().stream()
+                    .mapToDouble(task ->n.getCity().distanceTo(task.pickupCity) + task.pathLength())
+                    .max()
+                    .orElseThrow(NoSuchElementException::new);
+        }
     }
 
 
-    private Plan generatePlan(City initialCity, Node endNode){
-        Plan plan = new Plan(initialCity);
+    private Plan generatePlanFromLastNode(Node endNode){
+        //generate the list of traversed nodes from start to end
         ArrayList<Node> path = new ArrayList<>();
         Node currentNode = endNode;
         do {
@@ -214,6 +214,10 @@ public class Deliberative implements DeliberativeBehavior {
             currentNode = currentNode.getParent();
         } while (currentNode.getParent()!=null);
         path.add(0, currentNode);
+
+        //convert the list of nodes to a plan
+        City initialCity = path.get(0).getCity();
+        Plan plan = new Plan(initialCity);
 
         for(int i = 0;i<path.size()-1; i++){
             Node node = path.get(i);
@@ -267,11 +271,8 @@ public class Deliberative implements DeliberativeBehavior {
 
     @Override
     public void planCancelled(TaskSet carriedTasks) {
-        System.out.println("plan cancelled");
         if (!carriedTasks.isEmpty()) {
-            // This cannot happen for this simple agent, but typically
-            // you will need to consider the carriedTasks when the next
-            // plan is computed.
+            //this is not needed as vehicle.getCurrentTasks() is used for the plan generation
         }
     }
 }

@@ -5,6 +5,7 @@ import logist.task.TaskSet;
 import logist.topology.Topology.City;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Objects;
 
 public class Node {
@@ -38,16 +39,16 @@ public class Node {
         return parent;
     }
 
-    public ArrayList<Node> generateChildren() {
-        ArrayList<Node> children = new ArrayList<>();
+    public LinkedList<Node> generateChildren() {
+        LinkedList<Node> children = new LinkedList<>();
 
         for (Task task : remainingTasks) {
             if (task.pickupCity.equals(this.getCity())) {
                 if (getCurrentWeight() + task.weight <= maxCapacity) {
                     //delivery action
-                    TaskSet remainingTasks = this.getRemainingTasks().clone();
+                    TaskSet remainingTasks = TaskSet.copyOf(this.remainingTasks);
                     remainingTasks.remove(task);
-                    TaskSet carriedTasks = this.getCarriedTasks().clone();
+                    TaskSet carriedTasks = TaskSet.copyOf(this.carriedTasks);
                     carriedTasks.add(task);
 
                     Node child = new Node(this, this.city, carriedTasks, remainingTasks, maxCapacity);
@@ -59,8 +60,8 @@ public class Node {
         for (Task task : carriedTasks) {
             if (task.deliveryCity.equals(this.getCity())) {
                 //pickup action
-                TaskSet remainingTasks = this.getRemainingTasks().clone();
-                TaskSet carriedTasks = this.getCarriedTasks().clone();
+                TaskSet remainingTasks = TaskSet.copyOf(this.remainingTasks);
+                TaskSet carriedTasks = TaskSet.copyOf(this.carriedTasks);
                 carriedTasks.remove(task);
 
                 Node child = new Node(this, this.city, carriedTasks, remainingTasks, maxCapacity);
@@ -89,7 +90,7 @@ public class Node {
         return remainingTasks;
     }
 
-    public boolean isGoalState() {
+    public boolean isFinalState() {
         return remainingTasks.isEmpty() && carriedTasks.isEmpty();
     }
 
