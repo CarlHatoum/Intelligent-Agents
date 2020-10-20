@@ -83,14 +83,14 @@ public class Deliberative implements DeliberativeBehavior {
         Node initialNode = new Node(null, currentCity, vehicle.getCurrentTasks(), tasks, vehicle.capacity());
 
         LinkedList<Node> Q = new LinkedList<>(); //queue of nodes to be processed
-        ArrayList<Node> C = new ArrayList<>(); //processed nodes
+        HashMap<Node, Double> C = new HashMap<>();
 
         Q.add(initialNode);
 
         while (!Q.isEmpty()) {
         	//pop first node in queue
             Node n = Q.pop();
-            
+
             if(n.isFinalState()) {
             	//found a plan
             	Plan plan = generatePlanFromLastNode(n);
@@ -98,12 +98,12 @@ public class Deliberative implements DeliberativeBehavior {
             }
             //check if node was visited
             if (isLowestCostForState(C,n, node -> node.getGCost())) {
-            	C.add(n);
+            	C.put(n, n.getGCost());
             	//add all the children of n to the queue
                 Q.addAll(n.generateChildren());
             }
-             
         }
+
         if (plans.isEmpty()) {
             System.out.println("Error: no path found");
         }
@@ -135,7 +135,7 @@ public class Deliberative implements DeliberativeBehavior {
         PriorityQueue<Node> Q = new PriorityQueue<>(Comparator.comparingDouble(
                 x -> x.getGCost() + h(x)
         )); //queue of nodes to be processed, sorted according to f value
-        ArrayList<Node> C = new ArrayList<>(); //processed nodes
+        HashMap<Node, Double> C = new HashMap<>(); //processed nodes and their cost
 
         Q.add(initialNode);
 
@@ -143,7 +143,7 @@ public class Deliberative implements DeliberativeBehavior {
         while (!Q.isEmpty()) {
             //pop first node in queue
             Node n = Q.poll();
-//            System.out.println(n.getGCost() + h(n));
+
             if (n.isFinalState()) {
                 //found the solution
                 //generate the action List to get to the state n
@@ -152,8 +152,7 @@ public class Deliberative implements DeliberativeBehavior {
             }
 
             if (isLowestCostForState(C, n, node -> node.getGCost() + h(node))) {
-                C.add(n);
-
+                C.put(n, n.getGCost() + h(n));
                 //add all the children of n to the queue
                 Q.addAll(n.generateChildren());
                 //the queue is a PriorityQueue, thus it is always sorted
@@ -168,20 +167,18 @@ public class Deliberative implements DeliberativeBehavior {
      * return true if the list doesn't contain the node or if it does contain it but with a higher cost.
      * In the latter case, remove the higher cost node from the list
      */
-    private boolean isLowestCostForState(ArrayList<Node> list, Node n, ToDoubleFunction<Node> costFunction) {
-        if(!list.contains(n)){
+    private boolean isLowestCostForState(HashMap<Node, Double> list, Node n, ToDoubleFunction<Node> costFunction) {
+        if(!list.containsKey(n)){
             return true;
         }
         else{
-            Node currentBest = list.get(list.indexOf(n));
-            if(costFunction.applyAsDouble(n) < costFunction.applyAsDouble(currentBest)){
-                list.remove(currentBest);
-                return true;
-            }
-            else{
-                return false;
-            }
+            Double currentBest = list.get(n);
+            return costFunction.applyAsDouble(n) < currentBest;
         }
+    }
+
+    private double getTransitionCost(Node n1, Node n2){
+        return n1.getCity().distanceTo(n2.getCity());
     }
 
     /**
