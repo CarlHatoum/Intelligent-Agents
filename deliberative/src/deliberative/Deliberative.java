@@ -21,7 +21,7 @@ import java.util.function.ToDoubleFunction;
 @SuppressWarnings("unused")
 public class Deliberative implements DeliberativeBehavior {
 
-    enum Algorithm {BFS, ASTAR}
+    enum Algorithm {BFS, ASTAR, NAIVE}
 
     /* Environment */
     Topology topology;
@@ -46,8 +46,6 @@ public class Deliberative implements DeliberativeBehavior {
 
         // Throws IllegalArgumentException if algorithm is unknown
         algorithm = Algorithm.valueOf(algorithmName.toUpperCase());
-
-        // ...
     }
 
     @Override
@@ -63,6 +61,9 @@ public class Deliberative implements DeliberativeBehavior {
             case BFS:
                 plan = bfsPlan(vehicle, tasks);
                 break;
+            case NAIVE:
+                plan = naivePlan(vehicle, tasks);
+                break;
             default:
                 throw new AssertionError("Should not happen.");
         }
@@ -74,6 +75,9 @@ public class Deliberative implements DeliberativeBehavior {
         return plan;
     }
 
+    /**
+     * return the best plan using BFS algorithm
+     */
     private Plan bfsPlan(Vehicle vehicle, TaskSet tasks) {
     	System.out.println("generating BFS plan");
 
@@ -114,7 +118,9 @@ public class Deliberative implements DeliberativeBehavior {
         return plan;
     }
 
-    //return the plan with lowest cost
+    /**
+     * return the plan with lowest cost in the map
+     */
     private Plan getOptimalPlan(Map<Plan, Double> plans){
     	Map.Entry<Plan, Double> min = null;   	
     	for (Map.Entry<Plan, Double> entry : plans.entrySet()) {
@@ -125,6 +131,9 @@ public class Deliberative implements DeliberativeBehavior {
 		return min.getKey();
     }
 
+    /**
+     * return the best plan using A* algorithm
+     */
     private Plan aStarPlan(Vehicle vehicle, TaskSet tasks) {
         System.out.println("generating A* plan");
 
@@ -134,7 +143,7 @@ public class Deliberative implements DeliberativeBehavior {
 
         PriorityQueue<Node> Q = new PriorityQueue<>(Comparator.comparingDouble(
                 x -> x.getGCost() + h(x)
-        )); //queue of nodes to be processed, sorted according to f value
+        )); //queue of nodes to be processed, sorted according to the estimated total cost
         HashMap<Node, Double> C = new HashMap<>(); //processed nodes and their cost
 
         Q.add(initialNode);
@@ -146,7 +155,7 @@ public class Deliberative implements DeliberativeBehavior {
 
             if (n.isFinalState()) {
                 //found the solution
-                //generate the action List to get to the state n
+                //generate the planto get to the state n
                 plan = generatePlanFromLastNode(n);
                 break;
             }
@@ -165,7 +174,6 @@ public class Deliberative implements DeliberativeBehavior {
 
     /**
      * return true if the list doesn't contain the node or if it does contain it but with a higher cost.
-     * In the latter case, remove the higher cost node from the list
      */
     private boolean isLowestCostForState(HashMap<Node, Double> list, Node n, ToDoubleFunction<Node> costFunction) {
         if(!list.containsKey(n)){
@@ -177,13 +185,9 @@ public class Deliberative implements DeliberativeBehavior {
         }
     }
 
-    private double getTransitionCost(Node n1, Node n2){
-        return n1.getCity().distanceTo(n2.getCity());
-    }
-
     /**
      * heuristic: distance of the task with the longest required distance (distance to get to the pickup city + distance of task)
-     * if no task remaining, distance left of a random task
+     * if no task remaining, distance left of longest task
      */
     private double h(Node n) {
         if (n.getRemainingTasks().isEmpty()) {
@@ -271,6 +275,7 @@ public class Deliberative implements DeliberativeBehavior {
 
     @Override
     public void planCancelled(TaskSet carriedTasks) {
+        System.out.println("plan cancelled");
         if (!carriedTasks.isEmpty()) {
             //this is not needed as vehicle.getCurrentTasks() is used for the plan generation
         }
