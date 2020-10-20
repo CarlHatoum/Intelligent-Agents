@@ -191,7 +191,10 @@ public class Deliberative implements DeliberativeBehavior {
                 return 0.0;
             }
             else
-                return n.getCity().distanceTo(n.getCarriedTasks().iterator().next().deliveryCity);
+                return n.getCarriedTasks().stream()
+                    .mapToDouble(task ->n.getCity().distanceTo(task.deliveryCity))
+                    .max()
+                    .orElseThrow(NoSuchElementException::new);
         }
         else{
             return n.getRemainingTasks().stream()
