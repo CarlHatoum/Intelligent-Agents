@@ -16,3 +16,6 @@ rabbits/.project
 deliberative/out/
 deliberative/.idea/
 deliberative/history.xml
+deliberative/.classpath
+deliberative/bin/
+deliberative/.settings/org.eclipse.jdt.core.prefs

@@ -7,7 +7,7 @@
 	<agent name="deliberative-main">
 		<set class-path="bin/"/>
 		<set class-name="deliberative.Deliberative"/>
-		<set algorithm="ASTAR"/>
+		<set algorithm="Astar"/>
 	</agent>
 
 	<agent name="deliberative-bfs">
@@ -19,7 +19,7 @@
 	<agent name="deliberative-astar">
 		<set class-path="bin/"/>
 		<set class-name="deliberative.Deliberative"/>
-		<set algorithm="ASTAR"/>
+		<set algorithm="Astar"/>
 	</agent>
 
 </agents>
