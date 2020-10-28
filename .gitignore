@@ -19,3 +19,8 @@ deliberative/history.xml
 deliberative/.classpath
 deliberative/bin/
 deliberative/.settings/org.eclipse.jdt.core.prefs
+centralized/.idea/
+centralized/centralized.iml
+centralized/.classpath
+centralized/history.xml
+centralized/bin/.gitignore
