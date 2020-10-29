@@ -32,6 +32,8 @@ public class Centralized implements CentralizedBehavior {
     private long timeout_setup;
     private long timeout_plan;
 
+    private double p = 0.4;
+
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
                       Agent agent) {
@@ -71,7 +73,11 @@ public class Centralized implements CentralizedBehavior {
         do {
             A_old = A;
             ArrayList<Solution> N = chooseNeighbours(A_old);
-            A = localChoice(N);
+            Solution bestNeighbour = localChoice(N);
+
+            if (Math.random() > p) A = bestNeighbour;
+            else A = A_old;
+
         } while (!terminationConditionMet());
 
         List<Plan> plans = convertSolutionToPlan(A, vehicles, tasks);
@@ -84,24 +90,24 @@ public class Centralized implements CentralizedBehavior {
     }
 
     private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
-    	Solution solution = new Solution();
-    	Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
-    	
-    	//assign all the tasks to the vehicle with biggest capacity
-    	for (Task task : tasks) {
-    		MyAction pickup = new MyAction(task, true);
-    		solution.setNextAction(bestVehicle, pickup);
-    		solution.updateTime(bestVehicle);
-    		
-    		MyAction delivery = new MyAction(task, false);
-    		solution.setNextAction(bestVehicle, delivery);
-    		solution.updateTime(bestVehicle);
-    		
-    		solution.setNextAction(pickup, delivery);
-    			
-    		solution.setTaskVehicle(task, bestVehicle);
-    	}
-    	
+        Solution solution = new Solution();
+        Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
+
+        //assign all the tasks to the vehicle with biggest capacity
+        for (Task task : tasks) {
+            MyAction pickup = new MyAction(task, true);
+            solution.setNextAction(bestVehicle, pickup);
+            solution.updateTime(bestVehicle);
+
+            MyAction delivery = new MyAction(task, false);
+            solution.setNextAction(bestVehicle, delivery);
+            solution.updateTime(bestVehicle);
+
+            solution.setNextAction(pickup, delivery);
+
+            solution.setTaskVehicle(task, bestVehicle);
+        }
+
         return solution;
     }
 
@@ -111,8 +117,7 @@ public class Centralized implements CentralizedBehavior {
     }
 
     private Solution localChoice(ArrayList<Solution> N) {
-        //TODO
-        return null;
+        return N.stream().max(Comparator.comparingDouble(Solution::computeCost)).get();
     }
 
     private boolean terminationConditionMet() {
