@@ -25,11 +25,10 @@ public class MyAction {
         return task;
     }
 
-    public int getId(){
-        if(isPickup()){
+    public int getId() {
+        if (isPickup()) {
             return getTask().id;
-        }
-        else return getTask().id + Variables.NUM_TASK;
+        } else return getTask().id + Variables.NUM_TASKS;
     }
 
     @Override

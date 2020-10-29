@@ -21,7 +21,6 @@ import java.util.List;
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
  * handles them sequentially.
- *
  */
 @SuppressWarnings("unused")
 public class Centralized implements CentralizedBehavior {
@@ -31,25 +30,24 @@ public class Centralized implements CentralizedBehavior {
     private Agent agent;
     private long timeout_setup;
     private long timeout_plan;
-    
+
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
-            Agent agent) {
-        
+                      Agent agent) {
+
         // this code is used to get the timeouts
         LogistSettings ls = null;
         try {
             ls = Parsers.parseSettings("config" + File.separator + "settings_default.xml");
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             System.out.println("There was a problem loading the configuration file.");
         }
-        
+
         // the setup method cannot last more than timeout_setup milliseconds
         timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
         // the plan method cannot execute more than timeout_plan milliseconds
         timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
-        
+
         this.topology = topology;
         this.distribution = distribution;
         this.agent = agent;
@@ -61,20 +59,20 @@ public class Centralized implements CentralizedBehavior {
         long time_start = System.currentTimeMillis();
 
         Variables.MAX_TIME = 100;//TODO comment determiner
-        Variables.NUM_TASK = agent.getTasks().size();
-        Variables.NUM_VEHICLE = agent.vehicles().size();
+        Variables.NUM_TASKS = agent.getTasks().size();
+        Variables.NUM_VEHICLES = agent.vehicles().size();
 
         Variables A = selectInitialSolution();
         Variables A_old;
 
-        do{
+        do {
             A_old = A;
             ArrayList<Variables> N = chooseNeighbours(A_old);
             A = localChoice(N);
         } while (!terminationConditionMet());
 
         List<Plan> plans = convertSolutionToPlan(A, vehicles, tasks);
-        
+
         long time_end = System.currentTimeMillis();
         long duration = time_end - time_start;
         System.out.println("The plan was generated in " + duration + " milliseconds.");
@@ -82,27 +80,27 @@ public class Centralized implements CentralizedBehavior {
         return plans;
     }
 
-    private Variables selectInitialSolution(){
+    private Variables selectInitialSolution() {
         //TODO
         return new Variables();
     }
 
-    private ArrayList<Variables> chooseNeighbours(Variables A_old){
+    private ArrayList<Variables> chooseNeighbours(Variables A_old) {
         //TODO
         return null;
     }
 
-    private Variables localChoice(ArrayList<Variables> N){
+    private Variables localChoice(ArrayList<Variables> N) {
         //TODO
         return null;
     }
 
-    private boolean terminationConditionMet(){
+    private boolean terminationConditionMet() {
         //TODO
         return true;
     }
 
-    private List<Plan> convertSolutionToPlan(Variables solution, List<Vehicle> vehicles, TaskSet tasks){
+    private List<Plan> convertSolutionToPlan(Variables solution, List<Vehicle> vehicles, TaskSet tasks) {
         List<Plan> plans = new ArrayList<Plan>();
         //TODO
         Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
