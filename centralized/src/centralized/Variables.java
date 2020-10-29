@@ -25,12 +25,14 @@ public class Variables {
         if (ti != null) {
             setActionTime(ti, 1);
             MyAction tj;
-            do {
+            while (true) {
                 tj = getNextAction(ti);
                 if (tj != null) {
                     setActionTime(tj, getActionTime(ti) + 1);
+                    ti = tj;
                 }
-            } while (tj != null);
+                else break;
+            }
         }
     }
 
