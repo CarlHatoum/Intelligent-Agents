@@ -20,6 +20,20 @@ public class Variables {
         capacities = new int[NUM_VEHICLES][MAX_TIME];
     }
 
+    private void updateTime(Vehicle v) {
+        MyAction ti = getNextAction(v);
+        if (ti != null) {
+            setActionTime(ti, 1);
+            MyAction tj;
+            while (true) {
+                tj = getNextAction(ti);
+                if (tj != null) {
+                    setActionTime(tj, getActionTime(ti) + 1);
+                }
+            }
+        }
+    }
+
     public MyAction getNextAction(Vehicle vehicle) {
         return nextActions[vehicle.id()];
     }
