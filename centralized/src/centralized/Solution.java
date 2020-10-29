@@ -5,7 +5,7 @@ import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology;
 
-public class Variables {
+public class Solution {
     public static int NUM_TASKS;
     public static int NUM_VEHICLES;
     public static int MAX_TIME;
@@ -17,7 +17,7 @@ public class Variables {
     private int[] vehicle;
     private int[][] capacities;
 
-    public Variables() {
+    public Solution() {
         nextActions = new MyAction[NUM_VEHICLES + NUM_TASKS * 2];
         time = new int[MAX_TIME];
         vehicle = new int[NUM_VEHICLES];

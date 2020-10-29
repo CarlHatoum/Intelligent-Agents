@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import centralized.MyAction;
-import centralized.Variables;
-
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
  * handles them sequentially.
@@ -62,18 +59,18 @@ public class Centralized implements CentralizedBehavior {
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
         long time_start = System.currentTimeMillis();
 
-        Variables.MAX_TIME = 100;//TODO comment determiner
-        Variables.NUM_TASKS = agent.getTasks().size();
-        Variables.NUM_VEHICLES = agent.vehicles().size();
-        Variables.topology = topology;
-        Variables.agent = agent;
+        Solution.MAX_TIME = 100;//TODO comment determiner
+        Solution.NUM_TASKS = agent.getTasks().size();
+        Solution.NUM_VEHICLES = agent.vehicles().size();
+        Solution.topology = topology;
+        Solution.agent = agent;
 
-        Variables A = selectInitialSolution(vehicles, tasks);
-        Variables A_old;
+        Solution A = selectInitialSolution(vehicles, tasks);
+        Solution A_old;
 
         do {
             A_old = A;
-            ArrayList<Variables> N = chooseNeighbours(A_old);
+            ArrayList<Solution> N = chooseNeighbours(A_old);
             A = localChoice(N);
         } while (!terminationConditionMet());
 
@@ -86,34 +83,34 @@ public class Centralized implements CentralizedBehavior {
         return plans;
     }
 
-    private Variables selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
-    	Variables variables = new Variables();
+    private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
+    	Solution solution = new Solution();
     	Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
     	
     	//assign all the tasks to the vehicle with biggest capacity
     	for (Task task : tasks) {
     		MyAction pickup = new MyAction(task, true);
-    		variables.setNextAction(bestVehicle, pickup);
-    		variables.updateTime(bestVehicle);
+    		solution.setNextAction(bestVehicle, pickup);
+    		solution.updateTime(bestVehicle);
     		
     		MyAction delivery = new MyAction(task, false);
-    		variables.setNextAction(bestVehicle, delivery);
-    		variables.updateTime(bestVehicle);
+    		solution.setNextAction(bestVehicle, delivery);
+    		solution.updateTime(bestVehicle);
     		
-    		variables.setNextAction(pickup, delivery);
+    		solution.setNextAction(pickup, delivery);
     			
-    		variables.setTaskVehicle(task, bestVehicle);    		
+    		solution.setTaskVehicle(task, bestVehicle);
     	}
     	
-        return variables;
+        return solution;
     }
 
-    private ArrayList<Variables> chooseNeighbours(Variables A_old) {
+    private ArrayList<Solution> chooseNeighbours(Solution A_old) {
         //TODO
         return null;
     }
 
-    private Variables localChoice(ArrayList<Variables> N) {
+    private Solution localChoice(ArrayList<Solution> N) {
         //TODO
         return null;
     }
@@ -123,7 +120,7 @@ public class Centralized implements CentralizedBehavior {
         return true;
     }
 
-    private List<Plan> convertSolutionToPlan(Variables solution, List<Vehicle> vehicles, TaskSet tasks) {
+    private List<Plan> convertSolutionToPlan(Solution solution, List<Vehicle> vehicles, TaskSet tasks) {
         List<Plan> plans = new ArrayList<Plan>();
         //TODO
         Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
