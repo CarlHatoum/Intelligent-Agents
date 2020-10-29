@@ -8,11 +8,11 @@ public class MyAction {
     private boolean isPickup;
     private Task task;
 
-    public MyAction(Task task) {
+    public MyAction(Task task, boolean isPickup){
         this.task = task;
+        this.isPickup = isPickup;
     }
-
-
+    
     public boolean isPickup() {
         return isPickup;
     }

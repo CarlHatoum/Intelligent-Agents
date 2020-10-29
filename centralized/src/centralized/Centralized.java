@@ -16,7 +16,11 @@ import logist.topology.Topology.City;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+
+import centralized.MyAction;
+import centralized.Variables;
 
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
@@ -62,7 +66,7 @@ public class Centralized implements CentralizedBehavior {
         Variables.NUM_TASKS = agent.getTasks().size();
         Variables.NUM_VEHICLES = agent.vehicles().size();
 
-        Variables A = selectInitialSolution();
+        Variables A = selectInitialSolution(vehicles, tasks);
         Variables A_old;
 
         do {
@@ -80,9 +84,26 @@ public class Centralized implements CentralizedBehavior {
         return plans;
     }
 
-    private Variables selectInitialSolution() {
-        //TODO
-        return new Variables();
+    private Variables selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
+    	Variables variables = new Variables();
+    	Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
+    	
+    	//assign all the tasks to the vehicle with biggest capacity
+    	for (Task task : tasks) {
+    		MyAction pickup = new MyAction(task, true);
+    		variables.setNextAction(bestVehicle, pickup);
+    		variables.updateTime(bestVehicle);
+    		
+    		MyAction delivery = new MyAction(task, false);
+    		variables.setNextAction(bestVehicle, delivery);
+    		variables.updateTime(bestVehicle);
+    		
+    		variables.setNextAction(pickup, delivery);
+    			
+    		variables.setTaskVehicle(task, bestVehicle);    		
+    	}
+    	
+        return variables;
     }
 
     private ArrayList<Variables> chooseNeighbours(Variables A_old) {
