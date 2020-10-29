@@ -1,12 +1,16 @@
 package centralized;
 
+import logist.agent.Agent;
 import logist.simulation.Vehicle;
 import logist.task.Task;
+import logist.topology.Topology;
 
 public class Variables {
     public static int NUM_TASKS;
     public static int NUM_VEHICLES;
     public static int MAX_TIME;
+    public static Topology topology;
+    public static Agent agent;
 
     private MyAction[] nextActions;
     private int[] time;
@@ -30,10 +34,35 @@ public class Variables {
                 if (tj != null) {
                     setActionTime(tj, getActionTime(ti) + 1);
                     ti = tj;
-                }
-                else break;
+                } else break;
             }
         }
+    }
+
+    public double computeCost() {
+        double cost = 0;
+        for (Vehicle v : agent.vehicles()) {
+            cost += computeVehicleDistance(v) * v.costPerKm();
+        }
+        return cost;
+    }
+
+    private double computeVehicleDistance(Vehicle v) {
+        double distance = 0;
+        MyAction ti = getNextAction(v);
+        if (ti != null) {
+            setActionTime(ti, 1);
+            MyAction tj;
+            while (true) {
+                tj = getNextAction(ti);
+                if (tj != null) {
+                    distance += ti.getActionCity().distanceTo(tj.getActionCity());
+
+                    ti = tj;
+                } else break;
+            }
+        }
+        return distance;
     }
 
     public MyAction getNextAction(Vehicle vehicle) {

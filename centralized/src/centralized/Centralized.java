@@ -65,6 +65,8 @@ public class Centralized implements CentralizedBehavior {
         Variables.MAX_TIME = 100;//TODO comment determiner
         Variables.NUM_TASKS = agent.getTasks().size();
         Variables.NUM_VEHICLES = agent.vehicles().size();
+        Variables.topology = topology;
+        Variables.agent = agent;
 
         Variables A = selectInitialSolution(vehicles, tasks);
         Variables A_old;

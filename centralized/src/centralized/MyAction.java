@@ -1,6 +1,8 @@
 package centralized;
 
 import logist.task.Task;
+import logist.topology.Topology;
+import logist.topology.Topology.City;
 
 import java.util.Objects;
 
@@ -23,6 +25,13 @@ public class MyAction {
 
     public Task getTask() {
         return task;
+    }
+
+    public City getActionCity(){
+        if(isPickup){
+            return task.pickupCity;
+        }
+        else return task.deliveryCity;
     }
 
     public int getId() {
