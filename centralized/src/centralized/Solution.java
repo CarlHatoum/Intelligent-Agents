@@ -20,7 +20,7 @@ public class Solution {
     public Solution() {
         nextActions = new MyAction[NUM_VEHICLES + NUM_TASKS * 2];
         time = new int[MAX_TIME];
-        vehicle = new int[NUM_VEHICLES];
+        vehicle = new int[NUM_TASKS];
         capacities = new int[NUM_VEHICLES][MAX_TIME];
     }
 
@@ -81,7 +81,6 @@ public class Solution {
         nextActions[NUM_VEHICLES + action.getId()] = nextAction;
     }
 
-
     public int getCapacity(Vehicle vehicle, int time) {
         return capacities[vehicle.id()][time];
     }
@@ -90,8 +89,8 @@ public class Solution {
         capacities[vehicle.id()][time] = capacity;
     }
 
-    public int getVehicleId(Task task) {
-        return vehicle[task.id];
+    public Vehicle getResponsibleVehicle(Task task) {
+        return agent.vehicles().get(vehicle[task.id]);
     }
 
     public void setTaskVehicle(Task task, Vehicle v) {

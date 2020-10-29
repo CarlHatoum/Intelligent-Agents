@@ -68,6 +68,7 @@ public class Centralized implements CentralizedBehavior {
         Solution.agent = agent;
 
         Solution A = selectInitialSolution(vehicles, tasks);
+        System.out.println("initial cost:" + A.computeCost());
         Solution A_old;
 
         do {
@@ -81,6 +82,10 @@ public class Centralized implements CentralizedBehavior {
         } while (!terminationConditionMet());
 
         List<Plan> plans = convertSolutionToPlan(A, vehicles, tasks);
+
+        for(Plan plan:plans){
+            System.out.println(plan);
+        }
 
         long time_end = System.currentTimeMillis();
         long duration = time_end - time_start;
@@ -113,7 +118,7 @@ public class Centralized implements CentralizedBehavior {
 
     private ArrayList<Solution> chooseNeighbours(Solution A_old) {
         //TODO
-        return null;
+        return new ArrayList<Solution>(){{add(A_old);}};
     }
 
     private Solution localChoice(ArrayList<Solution> N) {
