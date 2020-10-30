@@ -9,11 +9,28 @@ public class MyAction {
     private boolean isPickup;
     private Task task;
 
-    public MyAction(Task task, boolean isPickup){
+    public MyAction(Task task, boolean isPickup) {
         this.task = task;
         this.isPickup = isPickup;
     }
-    
+
+    public MyAction(int id) {
+        id -= Solution.NUM_VEHICLES;
+        if (id < Solution.NUM_TASKS) {
+            isPickup = true;
+        } else {
+            isPickup = false;
+            id -= Solution.NUM_TASKS;
+        }
+
+        for (Task task : Solution.agent.getTasks()) {
+            if (task.id == id) {
+                this.task = task;
+                break;
+            }
+        }
+    }
+
     public boolean isPickup() {
         return isPickup;
     }
@@ -26,17 +43,16 @@ public class MyAction {
         return task;
     }
 
-    public City getActionCity(){
-        if(isPickup){
+    public City getActionCity() {
+        if (isPickup) {
             return task.pickupCity;
-        }
-        else return task.deliveryCity;
+        } else return task.deliveryCity;
     }
 
     public int getId() {
         if (isPickup()) {
-            return getTask().id;
-        } else return getTask().id + Solution.NUM_TASKS;
+            return Solution.NUM_VEHICLES + task.id;
+        } else return Solution.NUM_VEHICLES + Solution.NUM_TASKS + task.id;
     }
 
     @Override
@@ -51,5 +67,14 @@ public class MyAction {
     @Override
     public int hashCode() {
         return Objects.hash(isPickup(), task);
+    }
+
+    @Override
+    public String toString() {
+        if (isPickup) {
+            return "Pickup " + task.toString();
+        } else {
+            return "Deliver " + task.toString();
+        }
     }
 }

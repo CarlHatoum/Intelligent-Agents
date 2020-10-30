@@ -68,6 +68,7 @@ public class Centralized implements CentralizedBehavior {
         Solution.agent = agent;
 
         Solution A = selectInitialSolution(vehicles, tasks);
+        System.out.println(A.convertToPlan());
         System.out.println("initial cost:" + A.computeCost());
         Solution A_old;
 
@@ -81,10 +82,14 @@ public class Centralized implements CentralizedBehavior {
 
         } while (!terminationConditionMet());
 
-        List<Plan> plans = convertSolutionToPlan(A, vehicles, tasks);
+        List<Plan> plans = A.convertToPlan();
 
-        for(Plan plan:plans){
-            System.out.println(plan);
+        for (Task task : tasks) {
+            System.out.println(task);
+        }
+        for (int i = 0; i < vehicles.size(); i++) {
+            System.out.println(plans.get(i));
+            System.out.println(plans.get(i).totalDistance() * vehicles.get(i).costPerKm());
         }
 
         long time_end = System.currentTimeMillis();
@@ -128,17 +133,6 @@ public class Centralized implements CentralizedBehavior {
     private boolean terminationConditionMet() {
         //TODO
         return true;
-    }
-
-    private List<Plan> convertSolutionToPlan(Solution solution, List<Vehicle> vehicles, TaskSet tasks) {
-        List<Plan> plans = new ArrayList<Plan>();
-        //TODO
-        Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
-        plans.add(planVehicle1);
-        while (plans.size() < vehicles.size()) {
-            plans.add(Plan.EMPTY);
-        }
-        return plans;
     }
 
     private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
