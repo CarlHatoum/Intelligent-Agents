@@ -108,7 +108,23 @@ public class Solution {
     }
 
 
-    public MyAction getNextAction(Vehicle vehicle) {
+    public int[] getTime() {
+		return time;
+	}
+
+	public void setTime(int[] time) {
+		this.time = time;
+	}
+
+	public Vehicle[] getVehicle() {
+		return vehicle;
+	}
+
+	public void setVehicle(Vehicle[] vehicle) {
+		this.vehicle = vehicle;
+	}
+
+	public MyAction getNextAction(Vehicle vehicle) {
         return nextActions[vehicle.id()];
     }
 

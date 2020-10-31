@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import centralized.MyAction;
+import centralized.Solution;
+
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
  * handles them sequentially.
@@ -119,6 +122,35 @@ public class Centralized implements CentralizedBehavior {
         }
 
         return solution;
+    }
+    
+    //constraints
+    private boolean checkCapacity(Solution solution) {
+    	for (Vehicle vehicle : solution.getVehicle()) {
+    		for (int time : solution.getTime()) {
+    			if (solution.getCapacity(vehicle, time) > vehicle.capacity()) return false;
+    		}
+    	}
+    	return true;
+    }
+    
+    private boolean checkOrder(Solution solution) {
+    	for (Vehicle vehicle : solution.getVehicle()) {
+    		List<MyAction> actions = new ArrayList<MyAction>();
+    		List<MyAction> treatedActions = new ArrayList<MyAction>();
+    		MyAction myaction = solution.getNextAction(vehicle);
+    		while (solution.getNextAction(myaction)!= null) {
+    			actions.add(myaction);
+    			myaction = solution.getNextAction(myaction);
+    		}
+    		for (MyAction action : actions) {
+    			if (!treatedActions.contains(action)) {
+    				if (action.isDelivery()) return false;
+    				else treatedActions.add(action);
+    			}
+    		}
+    	}
+		return true;
     }
 
     private ArrayList<Solution> chooseNeighbours(Solution A_old) {
