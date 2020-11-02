@@ -16,6 +16,7 @@ import logist.topology.Topology.City;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -34,7 +35,6 @@ public class Centralized implements CentralizedBehavior {
     private Agent agent;
     private long timeout_setup;
     private long timeout_plan;
-
     private double p = 0.4;
 
     @Override
@@ -77,12 +77,18 @@ public class Centralized implements CentralizedBehavior {
         do {
             A_old = A;
             ArrayList<Solution> N = chooseNeighbours(A_old);
+//            for(Solution n: N){
+//                System.out.println(n.computeCost());
+//            }
+
             Solution bestNeighbour = localChoice(N);
 
-            if (Math.random() > p) A = bestNeighbour;
-            else A = A_old;
+            A = bestNeighbour;
+//            if (Math.random() > p) A = bestNeighbour;
+//            else A = A_old;
 
-        } while (!terminationConditionMet());
+
+        } while (System.currentTimeMillis() - time_start < timeout_plan * 0.9);
 
         List<Plan> plans = A.convertToPlan();
 
@@ -123,16 +129,39 @@ public class Centralized implements CentralizedBehavior {
         }
         return solution;
     }
-    
+
     //constraints
     private boolean checkCapacity(Solution solution) {
-    	for (Vehicle vehicle : solution.getVehicle()) {
-    		for (int time : solution.getTime()) {
-    			if (solution.getCapacity(vehicle, time) > vehicle.capacity()) return false;
-    		}
-    	}
-    	return true;
+        for (Vehicle vehicle : solution.getVehicle()) {
+            double currentCapacity = 0;
+            double maxCapacity = vehicle.capacity();
+
+            MyAction a = solution.getNextAction(vehicle);
+            while (a!=null){
+                double weight = a.getTask().weight;
+
+                if(a.isPickup()) currentCapacity += weight;
+                else currentCapacity -= weight;
+
+                if(currentCapacity > maxCapacity) return false;
+
+                a = solution.getNextAction(a);
+            }
+
+        }
+        return true;
     }
+
+
+    //constraints
+//    private boolean checkCapacity(Solution solution) {
+//    	for (Vehicle vehicle : solution.getVehicle()) {
+//    		for (int time : solution.getTime()) {
+//    			if (solution.getCapacity(vehicle, time) > vehicle.capacity()) return false;
+//    		}
+//    	}
+//    	return true;
+//    }
     
     private boolean checkOrder(Solution solution) {
     	for (Vehicle vehicle : solution.getVehicle()) {
@@ -150,42 +179,40 @@ public class Centralized implements CentralizedBehavior {
     }
 
     private ArrayList<Solution> chooseNeighbours(Solution A_old) {
-        //TODO
-        return new ArrayList<Solution>(){{add(A_old);}};
+        ArrayList<Solution> neighbours = new ArrayList<>();
+
+        //select random vehicle with tasks
+        List<Vehicle> randomVehicles = new ArrayList<>(agent.vehicles());
+        Collections.shuffle(randomVehicles);
+        Vehicle vi = null;
+        for(Vehicle v: randomVehicles){
+            if(A_old.hasActions(v)){
+                vi = v;
+                randomVehicles.remove(vi);
+                break;
+            }
+        }
+
+        //add all permutation of 2 actions as neighbour (if valid)
+        int length = A_old.getNumberOfActions(vi);
+        for(int tIdx1 = 1; tIdx1 < length;tIdx1++){
+            for(int tIdx2 = tIdx1+1; tIdx2 < length + 1;tIdx2++){
+                Solution n = new Solution(A_old);
+                n.changingActionOrder(vi, tIdx1, tIdx2);
+                if(checkOrder(n) && checkCapacity(n)){
+//                    n.printActions();
+                    neighbours.add(n);
+                }
+            }
+        }
+
+
+        return neighbours;
     }
 
     private Solution localChoice(ArrayList<Solution> N) {
-        return N.stream().max(Comparator.comparingDouble(Solution::computeCost)).get();
-    }
-
-    private boolean terminationConditionMet() {
-        //TODO
-        return true;
-    }
-
-    private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
-        City current = vehicle.getCurrentCity();
-        Plan plan = new Plan(current);
-
-        for (Task task : tasks) {
-            // move: current city => pickup location
-            for (City city : current.pathTo(task.pickupCity)) {
-                plan.appendMove(city);
-            }
-
-            plan.appendPickup(task);
-
-            // move: pickup location => delivery location
-            for (City city : task.path()) {
-                plan.appendMove(city);
-            }
-
-            plan.appendDelivery(task);
-
-            // set current city
-            current = task.deliveryCity;
-        }
-        return plan;
+        if(N.isEmpty()) return null;
+        return N.stream().min(Comparator.comparingDouble(Solution::computeCost)).get();
     }
 
 }

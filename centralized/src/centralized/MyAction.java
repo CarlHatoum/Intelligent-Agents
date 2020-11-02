@@ -72,9 +72,9 @@ public class MyAction {
     @Override
     public String toString() {
         if (isPickup) {
-            return "Pickup " + task.toString();
+            return "Pickup " + task.id;
         } else {
-            return "Deliver " + task.toString();
+            return "Deliver " + task.id;
         }
     }
 }

@@ -31,6 +31,13 @@ public class Solution {
         capacities = new int[NUM_VEHICLES][MAX_TIME];
     }
 
+    public Solution(Solution original) {
+        nextActions = original.nextActions.clone();
+        time = original.time.clone();
+        vehicle = original.vehicle.clone();
+        capacities = original.capacities.clone();
+    }
+
     public void updateTime(Vehicle v) {
         MyAction ti = getNextAction(v);
         if (ti != null) {
@@ -82,8 +89,8 @@ public class Solution {
         }
         MyAction tPost1 = getNextAction(t1);
 
-        MyAction tPre2 = null;
-        MyAction t2 = getNextAction(vi);
+        MyAction tPre2 = t1;
+        MyAction t2 = getNextAction(tPre2);
         count++;
         while (count < tIdx2) {
             tPre2 = t2;
@@ -118,6 +125,16 @@ public class Solution {
     		}
     	}
     	setNextAction(v2, getNextAction(ti));
+    }
+
+    public int getNumberOfActions(Vehicle v){
+        int length = 0;
+        MyAction a = getNextAction(v);
+        while (a!=null){
+            length++;
+            a = getNextAction(a);
+        }
+        return length;
     }
 
 
@@ -175,6 +192,22 @@ public class Solution {
 
     public void setActionTime(MyAction action, int t) {
         time[action.getId()] = t;
+    }
+
+    public boolean hasActions(Vehicle v){
+        return getNextAction(v) != null;
+    }
+
+    public void printActions(){
+        for(Vehicle v: agent.vehicles()){
+            MyAction a = getNextAction(v);
+            System.out.print("vehicle "+v.id()+ ": ");
+            while (a!=null){
+                System.out.print(a+" ");
+                a = getNextAction(a);
+            }
+            System.out.println();
+        }
     }
 
     public List<Plan> convertToPlan() {
