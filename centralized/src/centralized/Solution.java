@@ -146,14 +146,6 @@ public class Solution {
 		this.time = time;
 	}
 
-	public Vehicle[] getVehicle() {
-		return vehicle;
-	}
-
-	public void setVehicle(Vehicle[] vehicle) {
-		this.vehicle = vehicle;
-	}
-
 	public MyAction getNextAction(Vehicle vehicle) {
         return nextActions[vehicle.id()];
     }

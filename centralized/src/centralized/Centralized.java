@@ -132,7 +132,7 @@ public class Centralized implements CentralizedBehavior {
 
     //constraints
     private boolean checkCapacity(Solution solution) {
-        for (Vehicle vehicle : solution.getVehicle()) {
+        for (Vehicle vehicle : agent.vehicles()) {
             double currentCapacity = 0;
             double maxCapacity = vehicle.capacity();
 
@@ -164,7 +164,7 @@ public class Centralized implements CentralizedBehavior {
 //    }
     
     private boolean checkOrder(Solution solution) {
-    	for (Vehicle vehicle : solution.getVehicle()) {
+    	for (Vehicle vehicle : agent.vehicles()) {
     		List<Task> treated = new ArrayList<Task>();
     		MyAction myaction = solution.getNextAction(vehicle);
     		while (myaction!= null) {
