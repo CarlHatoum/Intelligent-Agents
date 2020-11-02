@@ -107,7 +107,6 @@ public class Centralized implements CentralizedBehavior {
         Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
         MyAction previous = null;
         for (Task task : tasks) {
-        	
         	solution.setTaskVehicle(task, bestVehicle);
         	
         	MyAction pickup = new MyAction(task, true);
@@ -137,19 +136,14 @@ public class Centralized implements CentralizedBehavior {
     
     private boolean checkOrder(Solution solution) {
     	for (Vehicle vehicle : solution.getVehicle()) {
-    		List<MyAction> actions = new ArrayList<MyAction>();
     		List<Task> treated = new ArrayList<Task>();
     		MyAction myaction = solution.getNextAction(vehicle);
     		while (myaction!= null) {
-    			actions.add(myaction);
-    			myaction = solution.getNextAction(myaction);
-    		}
-    		for (MyAction action : actions) {
-    			if (!treated.contains(action.getTask())) {
-    				if (action.isDelivery()) return false;
-    				else treated.add(action.getTask());
-    				System.out.println("treated :"+treated);
+    			if (!treated.contains(myaction.getTask())) {
+    				if (myaction.isDelivery()) return false;
+    				else treated.add(myaction.getTask());
     			}
+    			myaction = solution.getNextAction(myaction);
     		}
     	}
 		return true;
