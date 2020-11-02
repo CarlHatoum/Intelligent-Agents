@@ -71,7 +71,6 @@ public class Centralized implements CentralizedBehavior {
         Solution.agent = agent;
 
         Solution A = selectInitialSolution(vehicles, tasks);
-        System.out.println(A.convertToPlan());
         System.out.println("initial cost:" + A.computeCost());
         Solution A_old;
 
@@ -103,24 +102,28 @@ public class Centralized implements CentralizedBehavior {
     }
 
     private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
+        //assign all the tasks to the vehicle with biggest capacity
         Solution solution = new Solution();
         Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
-
-        //assign all the tasks to the vehicle with biggest capacity
+        Vehicle other = vehicles.stream().min(Comparator.comparingInt(Vehicle::capacity)).get();
+        MyAction previous = null;
         for (Task task : tasks) {
-            MyAction pickup = new MyAction(task, true);
-            solution.setNextAction(bestVehicle, pickup);
+        	
+        	solution.setTaskVehicle(task, bestVehicle);
+        	
+        	MyAction pickup = new MyAction(task, true);
+        	if (previous == null) solution.setNextAction(bestVehicle, pickup);
+        	else solution.setNextAction(previous, pickup);
             solution.updateTime(bestVehicle);
-
+            
+            
             MyAction delivery = new MyAction(task, false);
-            solution.setNextAction(bestVehicle, delivery);
-            solution.updateTime(bestVehicle);
-
             solution.setNextAction(pickup, delivery);
+            solution.updateTime(bestVehicle);
+            
+            previous = delivery;
 
-            solution.setTaskVehicle(task, bestVehicle);
-        }
-
+        } 
         return solution;
     }
     
@@ -137,16 +140,17 @@ public class Centralized implements CentralizedBehavior {
     private boolean checkOrder(Solution solution) {
     	for (Vehicle vehicle : solution.getVehicle()) {
     		List<MyAction> actions = new ArrayList<MyAction>();
-    		List<MyAction> treatedActions = new ArrayList<MyAction>();
+    		List<Task> treated = new ArrayList<Task>();
     		MyAction myaction = solution.getNextAction(vehicle);
-    		while (solution.getNextAction(myaction)!= null) {
+    		while (myaction!= null) {
     			actions.add(myaction);
     			myaction = solution.getNextAction(myaction);
     		}
     		for (MyAction action : actions) {
-    			if (!treatedActions.contains(action)) {
+    			if (!treated.contains(action.getTask())) {
     				if (action.isDelivery()) return false;
-    				else treatedActions.add(action);
+    				else treated.add(action.getTask());
+    				System.out.println("treated :"+treated);
     			}
     		}
     	}
@@ -191,4 +195,5 @@ public class Centralized implements CentralizedBehavior {
         }
         return plan;
     }
+
 }

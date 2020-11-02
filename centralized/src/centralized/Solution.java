@@ -106,6 +106,19 @@ public class Solution {
             setNextAction(t1, tPost2);
         }
     }
+    
+    public void moveAction(MyAction t, Vehicle v1, Vehicle v2) {
+    	MyAction ti = getNextAction(v1);
+    	if (ti==t) setNextAction(v1, getNextAction(ti));
+    	while (ti!=null) {
+    		if (getNextAction(ti)!=t) ti = getNextAction(ti);
+    		else {
+    			setNextAction(ti, getNextAction(getNextAction(ti)));
+    			break;
+    		}
+    	}
+    	setNextAction(v2, getNextAction(ti));
+    }
 
 
     public int[] getTime() {
