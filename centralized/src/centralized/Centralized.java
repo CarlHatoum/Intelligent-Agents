@@ -105,7 +105,6 @@ public class Centralized implements CentralizedBehavior {
         //assign all the tasks to the vehicle with biggest capacity
         Solution solution = new Solution();
         Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
-        Vehicle other = vehicles.stream().min(Comparator.comparingInt(Vehicle::capacity)).get();
         MyAction previous = null;
         for (Task task : tasks) {
         	
@@ -122,8 +121,7 @@ public class Centralized implements CentralizedBehavior {
             solution.updateTime(bestVehicle);
             
             previous = delivery;
-
-        } 
+        }
         return solution;
     }
     
