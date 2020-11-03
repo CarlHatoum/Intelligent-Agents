@@ -115,6 +115,7 @@ public class Solution {
     }
     
     public void moveAction(MyAction t, Vehicle v1, Vehicle v2) {
+    	//remove MyAction from v1
     	MyAction ti = getNextAction(v1);
     	if (ti==t) setNextAction(v1, getNextAction(ti));
     	while (ti!=null) {
@@ -124,7 +125,15 @@ public class Solution {
     			break;
     		}
     	}
-    	setNextAction(v2, getNextAction(ti));
+    	//Insert it in v2
+    	setTaskVehicle(t.getTask(), v2);
+    	if (getNextAction(v2)==null) setNextAction(v2, t);
+    	else {
+    		MyAction copy = getNextAction(v2);
+    		setNextAction(v2, t);
+    		setNextAction(t, copy);
+    	}
+    	updateTime(v2);
     }
 
     public int getNumberOfActions(Vehicle v){
