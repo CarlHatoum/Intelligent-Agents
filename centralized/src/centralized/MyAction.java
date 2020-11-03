@@ -14,23 +14,6 @@ public class MyAction {
         this.isPickup = isPickup;
     }
 
-    public MyAction(int id) {
-        id -= Solution.NUM_VEHICLES;
-        if (id < Solution.NUM_TASKS) {
-            isPickup = true;
-        } else {
-            isPickup = false;
-            id -= Solution.NUM_TASKS;
-        }
-
-        for (Task task : Solution.agent.getTasks()) {
-            if (task.id == id) {
-                this.task = task;
-                break;
-            }
-        }
-    }
-
     public boolean isPickup() {
         return isPickup;
     }

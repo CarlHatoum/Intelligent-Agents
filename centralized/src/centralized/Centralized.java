@@ -2,7 +2,6 @@ package centralized;
 
 //the list of imports
 
-import deliberative.Deliberative;
 import logist.LogistSettings;
 import logist.agent.Agent;
 import logist.behavior.CentralizedBehavior;
@@ -13,13 +12,9 @@ import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
-import logist.topology.Topology.City;
 
 import java.io.File;
 import java.util.*;
-
-import centralized.MyAction;
-import centralized.Solution;
 
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
@@ -33,7 +28,8 @@ public class Centralized implements CentralizedBehavior {
     private Agent agent;
     private long timeout_setup;
     private long timeout_plan;
-    private double p = .7;
+    private double p = .6;
+    private Random rand = new Random();
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
@@ -68,45 +64,29 @@ public class Centralized implements CentralizedBehavior {
         Solution.topology = topology;
         Solution.agent = agent;
 
+        Solution best = null;
+        double bestCost = Double.POSITIVE_INFINITY;
+
         Solution A = selectInitialSolution(vehicles, tasks);
         System.out.println("initial cost:" + A.computeCost());
         Solution A_old;
-
-        Solution best = A;
-        double bestCost = A.computeCost();
-
+        A.printActions();
         do {
             A_old = A;
             ArrayList<Solution> N = chooseNeighbours(A_old);
-//            for(Solution n: N){
-//                System.out.println(n.computeCost());
-//            }
-
             A = localChoice(N, A_old);
 //            A.printActions();
 
-            if(A.computeCost() < bestCost){
+            if (A.computeCost() < bestCost) {
                 best = A;
                 bestCost = A.computeCost();
             }
+        } while ((System.currentTimeMillis() - time_start) < 0.9 * timeout_plan);
 
-
-        } while (System.currentTimeMillis() - time_start < timeout_plan * 0.9);
-
-        List<Plan> plans = best.convertToPlan();
-
-        for (Task task : tasks) {
-            System.out.println(task);
-        }
-
-        Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
-
-//        System.out.println("best plan (A*):");
-//        System.out.println(Deliberative.aStarPlan(bestVehicle, tasks));
-        for (int i = 0; i < vehicles.size(); i++) {
-            System.out.println(plans.get(i));
-            System.out.println(plans.get(i).totalDistance() * vehicles.get(i).costPerKm());
-        }
+        System.out.println("Solution:");
+        List<Plan> plans = best.convertToPlans();
+        best.printActions();
+        System.out.println(best.computeCost());
 
         long time_end = System.currentTimeMillis();
         long duration = time_end - time_start;
@@ -116,133 +96,140 @@ public class Centralized implements CentralizedBehavior {
     }
 
 
+//    private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
+//        //assign all the tasks to the vehicle with biggest capacity
+//        Solution solution = new Solution();
+//        Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
+//
+//        MyAction previous = null;
+//        for (Task task : tasks) {
+//        	solution.setTaskVehicle(task, bestVehicle);
+//
+//        	MyAction pickup = new MyAction(task, true);
+//        	if (previous == null) solution.setNextAction(bestVehicle, pickup);
+//        	else solution.setNextAction(previous, pickup);
+//            solution.updateTime(bestVehicle);
+//
+//
+//            MyAction delivery = new MyAction(task, false);
+//            solution.setNextAction(pickup, delivery);
+//            solution.updateTime(bestVehicle);
+//
+//            previous = delivery;
+//        }
+//        return solution;
+//    }
+
+    /**
+     * Returns the initial solution where the tasks are distributed evenly among the vehicles
+     * if a task is too big for a vehicle, it is given to the biggest one instead
+     */
     private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
-        //assign all the tasks to the vehicle with biggest capacity
         Solution solution = new Solution();
-        Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
-        MyAction previous = null;
-        for (Task task : tasks) {
-        	solution.setTaskVehicle(task, bestVehicle);
-        	
-        	MyAction pickup = new MyAction(task, true);
-        	if (previous == null) solution.setNextAction(bestVehicle, pickup);
-        	else solution.setNextAction(previous, pickup);
-            solution.updateTime(bestVehicle);
-            
-            
-            MyAction delivery = new MyAction(task, false);
-            solution.setNextAction(pickup, delivery);
-            solution.updateTime(bestVehicle);
-            
-            previous = delivery;
+        Vehicle biggestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
+
+        for (Vehicle potentialVehicle : vehicles) {
+            MyAction previous = null;
+            //filter the tasks evenly
+            Iterator<Task> vehicleTasks = tasks.stream().filter(task -> task.id % vehicles.size() == potentialVehicle.id()).iterator();
+            while (vehicleTasks.hasNext()) {
+                Task task = vehicleTasks.next();
+                Vehicle v;
+                if (task.weight <= potentialVehicle.capacity()) v = potentialVehicle;
+                else v = biggestVehicle;
+
+                MyAction pickup = new MyAction(task, true);
+                if (previous == null) solution.setNextAction(v, pickup);
+                else solution.setNextAction(previous, pickup);
+
+                MyAction delivery = new MyAction(task, false);
+                solution.setNextAction(pickup, delivery);
+
+                previous = delivery;
+            }
         }
+
         return solution;
     }
 
-    //constraints
-    private boolean checkCapacity(Solution solution) {
-        for (Vehicle vehicle : agent.vehicles()) {
-            double currentCapacity = 0;
-            double maxCapacity = vehicle.capacity();
-
-            MyAction a = solution.getNextAction(vehicle);
-            while (a!=null){
-                double weight = a.getTask().weight;
-
-                if(a.isPickup()) currentCapacity += weight;
-                else currentCapacity -= weight;
-
-                if(currentCapacity > maxCapacity) return false;
-
-                a = solution.getNextAction(a);
-            }
-
-        }
-        return true;
-    }
-
-
-    //constraints
-//    private boolean checkCapacity(Solution solution) {
-//    	for (Vehicle vehicle : solution.getVehicle()) {
-//    		for (int time : solution.getTime()) {
-//    			if (solution.getCapacity(vehicle, time) > vehicle.capacity()) return false;
-//    		}
-//    	}
-//    	return true;
-//    }
-    
-    private boolean checkOrder(Solution solution) {
-    	for (Vehicle vehicle : agent.vehicles()) {
-    		List<Task> treated = new ArrayList<Task>();
-    		MyAction myaction = solution.getNextAction(vehicle);
-    		while (myaction!= null) {
-    			if (!treated.contains(myaction.getTask())) {
-    				if (myaction.isDelivery()) return false;
-    				else treated.add(myaction.getTask());
-    			}
-    			myaction = solution.getNextAction(myaction);
-    		}
-    	}
-		return true;
-    }
-
+    /**
+     * returns similar solutions where a task was moved from a vehicle
+     * and similar solutions where two actions have been swapped
+     */
     private ArrayList<Solution> chooseNeighbours(Solution A_old) {
         ArrayList<Solution> neighbours = new ArrayList<>();
-
-        //select random vehicle with tasks
         List<Vehicle> randomVehicles = new ArrayList<>(agent.vehicles());
         Collections.shuffle(randomVehicles);
+
         Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow();
 
+        randomVehicles.remove(vi);
+        for (Task t : A_old.getTasks(vi)) {
+            for (Vehicle vj : randomVehicles) {
+                Solution n = new Solution(A_old);
+                n.moveTask(t, vi, vj);
+                if (n.checkCapacity() && n.checkOrder()) {
+                    neighbours.add(n);
+                }
+                if (t.weight <= vj.capacity()) {
+                    int length = A_old.getNumberOfActions(vj);
+                    for (int tIdx1 = 1; tIdx1 < length; tIdx1++) {
+                        for (int tIdx2 = tIdx1 + 1; tIdx2 < length + 1; tIdx2++) {
+                            Solution n2 = new Solution(n);
+                            n2.swapActionOrder(vj, 1, tIdx1);
+                            n2.swapActionOrder(vj, 2, tIdx2);
+                            if (n2.checkCapacity() && n2.checkOrder()) {
+                                neighbours.add(n);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         //add all permutation of 2 actions as neighbour (if valid)
         int length = A_old.getNumberOfActions(vi);
-        for(int tIdx1 = 1; tIdx1 < length;tIdx1++){
-            for(int tIdx2 = tIdx1+1; tIdx2 < length + 1;tIdx2++){
+        for (int tIdx1 = 1; tIdx1 < length; tIdx1++) {
+            for (int tIdx2 = tIdx1 + 1; tIdx2 < length + 1; tIdx2++) {
                 Solution n = new Solution(A_old);
-                n.changingActionOrder(vi, tIdx1, tIdx2);
-                if(checkOrder(n) && checkCapacity(n)){
-//                    n.printActions();
+                n.swapActionOrder(vi, tIdx1, tIdx2);
+                if (n.checkCapacity() && n.checkOrder()) {
                     neighbours.add(n);
                 }
             }
         }
-
-
         return neighbours;
     }
 
+    /**
+     * returns a random lowest cost element with probability p,
+     * and a random element with probability 1-p
+     */
     private Solution localChoice(ArrayList<Solution> N, Solution A_old) {
+        if (N.isEmpty()) return A_old;
+
         Solution chosenNeighbour;
-        double old_cost = A_old.computeCost();
-        double bestCost = old_cost;
-//        System.out.println(bestCost);
+        double bestCost = A_old.computeCost();
 
         ArrayList<Solution> bestSols = new ArrayList<>();
-        for(Solution sol:N){
+        for (Solution sol : N) {
             double cost = sol.computeCost();
-            if(cost < bestCost){
+            if (cost < bestCost) {
                 bestCost = cost;
                 bestSols = new ArrayList<>();
                 bestSols.add(sol);
-            }
-            else if (cost == bestCost){
+            } else if (cost == bestCost) {
                 bestSols.add(sol);
             }
         }
 
-        if(bestSols.isEmpty()){
-            System.out.println("no best neighbour");
-            return A_old;
-        }
 
         //return best with probability p
-        if (Math.random() < p) return bestSols.get(new Random().nextInt(bestSols.size()));
+        if (Math.random() < p) {
+            if (bestSols.isEmpty()) return A_old;
+            return bestSols.get(rand.nextInt(bestSols.size()));
+        }
         //return random with probability 1-p
-        else return N.get(new Random().nextInt(N.size()));
-
-//        if (Math.random() > p) return N.stream().min(Comparator.comparingDouble(Solution::computeCost)).orElseThrow();
-//        else return N.get(new Random().nextInt(N.size()));
+        else return N.get(rand.nextInt(N.size()));
     }
 
 }
