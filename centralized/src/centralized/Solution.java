@@ -117,24 +117,32 @@ public class Solution {
     public void moveAction(MyAction t, Vehicle v1, Vehicle v2) {
     	//remove MyAction from v1
     	MyAction ti = getNextAction(v1);
-    	if (ti==t) setNextAction(v1, getNextAction(ti));
-    	while (ti!=null) {
-    		if (getNextAction(ti)!=t) ti = getNextAction(ti);
-    		else {
-    			setNextAction(ti, getNextAction(getNextAction(ti)));
-    			break;
-    		}
-    	}
+    	if (ti.equals(t)) setNextAction(v1, getNextAction(ti));
+    	else {
+            while (ti!=null) {
+                if (!getNextAction(ti).equals(t)) ti = getNextAction(ti);
+                else {
+                    setNextAction(ti, getNextAction(getNextAction(ti)));
+                    break;
+                }
+            }
+        }
+
     	//Insert it in v2
     	setTaskVehicle(t.getTask(), v2);
-    	if (getNextAction(v2)==null) setNextAction(v2, t);
-    	else {
-    		MyAction copy = getNextAction(v2);
-    		setNextAction(v2, t);
-    		setNextAction(t, copy);
-    	}
+    	MyAction copy = getNextAction(v2);
+    	setNextAction(v2, t);
+    	setNextAction(t, copy);
     	updateTime(v2);
     }
+
+    public void moveTask(Task task, Vehicle v1, Vehicle v2){
+        MyAction pickup = new MyAction(task, true);
+        MyAction deliver = new MyAction(task, false);
+        moveAction(deliver, v1, v2);
+        moveAction(pickup, v1, v2);
+    }
+
 
     public int getNumberOfActions(Vehicle v){
         int length = 0;
