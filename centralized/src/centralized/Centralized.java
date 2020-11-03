@@ -28,7 +28,7 @@ public class Centralized implements CentralizedBehavior {
     private Agent agent;
     private long timeout_setup;
     private long timeout_plan;
-    private double p = .6;
+    private double p = .7;
     private Random rand = new Random();
 
     @Override
