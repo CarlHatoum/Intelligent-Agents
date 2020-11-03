@@ -2,6 +2,7 @@ package centralized;
 
 //the list of imports
 
+import deliberative.Deliberative;
 import logist.LogistSettings;
 import logist.agent.Agent;
 import logist.behavior.CentralizedBehavior;
@@ -15,10 +16,7 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import centralized.MyAction;
 import centralized.Solution;
@@ -35,7 +33,7 @@ public class Centralized implements CentralizedBehavior {
     private Agent agent;
     private long timeout_setup;
     private long timeout_plan;
-    private double p = 0.4;
+    private double p = .7;
 
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
@@ -74,6 +72,9 @@ public class Centralized implements CentralizedBehavior {
         System.out.println("initial cost:" + A.computeCost());
         Solution A_old;
 
+        Solution best = A;
+        double bestCost = A.computeCost();
+
         do {
             A_old = A;
             ArrayList<Solution> N = chooseNeighbours(A_old);
@@ -81,20 +82,27 @@ public class Centralized implements CentralizedBehavior {
 //                System.out.println(n.computeCost());
 //            }
 
-            Solution bestNeighbour = localChoice(N);
+            A = localChoice(N, A_old);
+//            A.printActions();
 
-            A = bestNeighbour;
-//            if (Math.random() > p) A = bestNeighbour;
-//            else A = A_old;
+            if(A.computeCost() < bestCost){
+                best = A;
+                bestCost = A.computeCost();
+            }
 
 
         } while (System.currentTimeMillis() - time_start < timeout_plan * 0.9);
 
-        List<Plan> plans = A.convertToPlan();
+        List<Plan> plans = best.convertToPlan();
 
         for (Task task : tasks) {
             System.out.println(task);
         }
+
+        Vehicle bestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
+
+//        System.out.println("best plan (A*):");
+//        System.out.println(Deliberative.aStarPlan(bestVehicle, tasks));
         for (int i = 0; i < vehicles.size(); i++) {
             System.out.println(plans.get(i));
             System.out.println(plans.get(i).totalDistance() * vehicles.get(i).costPerKm());
@@ -106,6 +114,7 @@ public class Centralized implements CentralizedBehavior {
 
         return plans;
     }
+
 
     private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
         //assign all the tasks to the vehicle with biggest capacity
@@ -184,14 +193,7 @@ public class Centralized implements CentralizedBehavior {
         //select random vehicle with tasks
         List<Vehicle> randomVehicles = new ArrayList<>(agent.vehicles());
         Collections.shuffle(randomVehicles);
-        Vehicle vi = null;
-        for(Vehicle v: randomVehicles){
-            if(A_old.hasActions(v)){
-                vi = v;
-                randomVehicles.remove(vi);
-                break;
-            }
-        }
+        Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow();
 
         //add all permutation of 2 actions as neighbour (if valid)
         int length = A_old.getNumberOfActions(vi);
@@ -210,9 +212,37 @@ public class Centralized implements CentralizedBehavior {
         return neighbours;
     }
 
-    private Solution localChoice(ArrayList<Solution> N) {
-        if(N.isEmpty()) return null;
-        return N.stream().min(Comparator.comparingDouble(Solution::computeCost)).get();
+    private Solution localChoice(ArrayList<Solution> N, Solution A_old) {
+        Solution chosenNeighbour;
+        double old_cost = A_old.computeCost();
+        double bestCost = old_cost;
+//        System.out.println(bestCost);
+
+        ArrayList<Solution> bestSols = new ArrayList<>();
+        for(Solution sol:N){
+            double cost = sol.computeCost();
+            if(cost < bestCost){
+                bestCost = cost;
+                bestSols = new ArrayList<>();
+                bestSols.add(sol);
+            }
+            else if (cost == bestCost){
+                bestSols.add(sol);
+            }
+        }
+
+        if(bestSols.isEmpty()){
+            System.out.println("no best neighbour");
+            return A_old;
+        }
+
+        //return best with probability p
+        if (Math.random() < p) return bestSols.get(new Random().nextInt(bestSols.size()));
+        //return random with probability 1-p
+        else return N.get(new Random().nextInt(N.size()));
+
+//        if (Math.random() > p) return N.stream().min(Comparator.comparingDouble(Solution::computeCost)).orElseThrow();
+//        else return N.get(new Random().nextInt(N.size()));
     }
 
 }
