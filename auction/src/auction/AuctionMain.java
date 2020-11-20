@@ -1,20 +1,21 @@
-package template;
+package auction;
 
 //the list of imports
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 import logist.Measures;
-import logist.behavior.AuctionBehavior;
 import logist.agent.Agent;
-import logist.simulation.Vehicle;
+import logist.behavior.AuctionBehavior;
 import logist.plan.Plan;
+import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
@@ -22,7 +23,7 @@ import logist.topology.Topology.City;
  * 
  */
 @SuppressWarnings("unused")
-public class AuctionTemplate implements AuctionBehavior {
+public class AuctionMain implements AuctionBehavior {
 
 	private Topology topology;
 	private TaskDistribution distribution;
@@ -67,14 +68,14 @@ public class AuctionTemplate implements AuctionBehavior {
 		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
 		double bid = ratio * marginalCost;
 
-		System.out.println("random agent bidded " + Math.round(bid) + " for " + task);
+		System.out.println("main agent bidded " + Math.round(bid) + " for " + task);
 		return (long) Math.round(bid);
 	}
 
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		
-		System.out.println("Main agent " + agent.id() + " has tasks " + tasks);
+		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
 
 		Plan planVehicle1 = naivePlan(vehicle, tasks);
 
