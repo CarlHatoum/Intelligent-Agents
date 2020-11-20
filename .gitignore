@@ -25,3 +25,7 @@ centralized/.classpath
 centralized/history.xml
 centralized/bin/.gitignore
 centralized/bin/
+auction/.classpath
+auction/.idea/
+auction/bin/
+auction/history.xml
