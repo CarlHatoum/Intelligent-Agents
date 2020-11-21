@@ -11,6 +11,7 @@ import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
+import logist.task.DefaultTaskDistribution;
 import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
@@ -29,7 +30,7 @@ import java.util.*;
 public class AuctionMain implements AuctionBehavior {
 
 	private Topology topology;
-	private TaskDistribution distribution;
+	private DefaultTaskDistribution distribution;
 	private Agent agent;
 	private Random random;
 	private Vehicle vehicle;
@@ -37,6 +38,7 @@ public class AuctionMain implements AuctionBehavior {
 	private double p = .7;
 	private long timeout_plan;
 	private long timeout_bid;
+	private double discount_factor = 0.3;
 
 	private ArrayList<Task> assignedTasks;
 	private Solution currentSolution;
@@ -46,7 +48,7 @@ public class AuctionMain implements AuctionBehavior {
 			Agent agent) {
 
 		this.topology = topology;
-		this.distribution = distribution;
+		this.distribution = (DefaultTaskDistribution) distribution;
 		this.agent = agent;
 		this.vehicle = agent.vehicles().get(0);
 		this.currentCity = vehicle.homeCity();
@@ -73,23 +75,27 @@ public class AuctionMain implements AuctionBehavior {
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
+		for(int i = 0; i<bids.length; i++){
+			if(i!=agent.id())System.out.println("opponent bid: " + bids[i]);
+		}
+
 		if (winner == agent.id()) {
 			System.out.println("task "+previous.id + " received");
 			assignedTasks.add(previous);
 			currentSolution.addNewTask(previous);
 			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.2);
 			currentSolution.printActions();
-			System.out.println();
 
 			currentCity = previous.deliveryCity;
 		}
+		System.out.println();
 	}
 
 	@Override
 	public Long askPrice(Task task) {
 		System.out.println("Bid for " + task + ":");
-		double ownCost = ownCostEstimation(task, timeout_bid*0.4);
-		System.out.println("Our cost estimate:" + ownCost);
+		double ownCost = costEstimation(currentSolution, task, timeout_bid*0.4);
+		System.out.println("our cost estimate: " + ownCost);
 
 		double opponentCost = opponentCostEstimation(task, timeout_bid*0.4);
 
@@ -110,17 +116,55 @@ public class AuctionMain implements AuctionBehavior {
 		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
 		double bid = ratio * marginalCost;
 
-		System.out.println("main agent bid " + Math.round(bid));
+		System.out.println("our bid: " + Math.round(bid));
 		return (long) Math.round(bid);
 	}
 
-	public double ownCostEstimation(Task additionalTask, double timeout){
-		ArrayList<Task> newTaskList = new ArrayList<>(assignedTasks);
-		newTaskList.add(additionalTask);
-		Solution newSolution = new Solution(currentSolution);
+	public double costEstimation(Solution solution, Task additionalTask, double timeout){
+		Solution newSolution = new Solution(solution);
 		newSolution.addNewTask(additionalTask);
-		double newCost = optimizeSolution(newSolution, timeout*0.5).computeCost();
-		return newCost - currentSolution.computeCost();
+
+		double marginalCost = Math.max(optimizeSolution(newSolution, timeout*0.5).computeCost() - currentSolution.computeCost(), 0);
+
+		double futureSavings1 = Math.min(futureSavingsIfTaskTaken(currentSolution, newSolution, 1, timeout*0.5) - marginalCost, 0);
+		double futureSavings2 = Math.min(futureSavingsIfTaskTaken(currentSolution, newSolution, 2, timeout*0.5) - marginalCost, 0);
+
+		System.out.println("marginal cost:"+marginalCost);
+		System.out.println("savings in 1 round:"+futureSavings1);
+		System.out.println("savings in 2 round:"+futureSavings2);
+
+		double cost = marginalCost + discount_factor*futureSavings1 + discount_factor*discount_factor* futureSavings2;
+
+		return cost;
+	}
+
+	public double futureSavingsIfTaskTaken(Solution sol, Solution solIfTaskTaken, int numberOfFutureTasks, double timeout){
+		int numberOfRuns = 30;
+
+		double futureSavings = 0;
+		for(int i = 0; i<numberOfRuns; i++){
+			Solution newSol = new Solution(sol);
+			Solution newSoIfTaskTaken = new Solution(solIfTaskTaken);
+			for (int j = 0; j<numberOfFutureTasks; j++){
+				Task newTask = distribution.createTask();
+				newSol.addNewTask(newTask);
+				newSoIfTaskTaken.addNewTask(newTask);
+			}
+
+			double futureCost = optimizeSolution(newSol, timeout/numberOfRuns/2).computeCost();
+			double futureCostIfTaskTaken = optimizeSolution(newSoIfTaskTaken, timeout/numberOfRuns/2).computeCost() ;
+//			solIfTaskTaken.printActions();
+//			System.out.println(solIfTaskTaken.computeCost());
+//			newSoIfTaskTaken.printActions();
+//			System.out.println(newSoIfTaskTaken.computeCost());
+//
+//			System.out.println("if not taken "+futureCost);
+//			System.out.println("if taken "+futureCostIfTaskTaken);
+//			System.out.println("diff "+futureCostIfTaskTaken);
+
+			futureSavings += (futureCostIfTaskTaken - futureCost)/numberOfRuns;
+		}
+		return futureSavings;
 	}
 
 	public double opponentCostEstimation(Task additionalTask, double timeout){
@@ -145,9 +189,9 @@ public class AuctionMain implements AuctionBehavior {
 	public Solution optimizeSolution(Solution initialSolution, double timeout) {
 		long time_start = System.currentTimeMillis();
 
-		Solution best = null;
-		double bestCost = Double.POSITIVE_INFINITY;
-
+		Solution best = initialSolution;
+		double bestCost = initialSolution.computeCost();
+//		System.out.println("before "+bestCost);
 		Solution A = initialSolution;
 		Solution A_old;
 		do {
@@ -162,6 +206,7 @@ public class AuctionMain implements AuctionBehavior {
 			}
 		} while ((System.currentTimeMillis() - time_start) < 0.9 * timeout);
 
+//		System.out.println("after "+bestCost);
 		return best;
 	}
 
