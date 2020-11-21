@@ -139,6 +139,15 @@ public class AuctionMain implements AuctionBehavior {
 		//TODO
 		return 0.0;
 	}
+	
+	public double bid(double ownCost, double oponentCost, double alpha) {
+		double bid;
+		if (oponentCost < ownCost) bid = 99999;
+		// the higher the alpha, the more we take risk
+		else bid = ownCost + alpha*(oponentCost - ownCost);
+		return bid;
+		
+	}
 
 
 	@Override
