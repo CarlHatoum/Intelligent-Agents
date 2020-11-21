@@ -66,7 +66,6 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
 		double bid = ratio * marginalCost;
-
 		System.out.println("random agent bid " + Math.round(bid));
 		return (long) Math.round(bid);
 	}

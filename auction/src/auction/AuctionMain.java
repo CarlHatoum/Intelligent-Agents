@@ -80,7 +80,6 @@ public class AuctionMain implements AuctionBehavior {
 			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.2);
 			currentSolution.printActions();
 			System.out.println();
-
 			currentCity = previous.deliveryCity;
 		}
 	}
@@ -121,6 +120,19 @@ public class AuctionMain implements AuctionBehavior {
 		newSolution.addNewTask(additionalTask);
 		double newCost = optimizeSolution(newSolution, timeout*0.5).computeCost();
 		return newCost - currentSolution.computeCost();
+	}
+	
+	public List<City> possibleCities(List<City> possibleCities, Task task, Long bid) {
+		//the marginal cost is lower or equal to the bid
+		for (City city : possibleCities) {
+			long totalDistance = city.distanceUnitsTo(task.pickupCity) + task.pickupCity.distanceUnitsTo(task.deliveryCity);
+			long marginalCost = totalDistance * 5;
+			// if the bid is smaller than the marginal cost of the city, it cannot be considered as candidate
+			if (bid < marginalCost) {
+				possibleCities.remove(city);
+			}
+		}
+		return possibleCities;
 	}
 
 	public double opponentCostEstimation(Task additionalTask, double timeout){
@@ -198,7 +210,7 @@ public class AuctionMain implements AuctionBehavior {
 		List<Vehicle> randomVehicles = new ArrayList<>(agent.vehicles());
 		Collections.shuffle(randomVehicles);
 
-		Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow();
+		Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow(null);
 
 		randomVehicles.remove(vi);
 		for (Task t : A_old.getTasks(vi)) {
