@@ -58,11 +58,6 @@ public class Centralized implements CentralizedBehavior {
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
         long time_start = System.currentTimeMillis();
 
-        Solution.NUM_TASKS = agent.getTasks().size();
-        Solution.NUM_VEHICLES = agent.vehicles().size();
-        Solution.topology = topology;
-        Solution.agent = agent;
-
         Solution best = null;
         double bestCost = Double.POSITIVE_INFINITY;
 

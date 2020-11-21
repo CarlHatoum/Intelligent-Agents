@@ -7,24 +7,45 @@ import logist.task.Task;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class Solution {
-    public static int NUM_TASKS;
-    public static int NUM_VEHICLES;
     public static Topology topology;
     public static Agent agent;
 
-    private MyAction[] nextActions;
+    private HashMap<Vehicle, MyAction> nextActionsVehicle;
+    private HashMap<MyAction, MyAction> nextActions;
 
     public Solution() {
-        nextActions = new MyAction[NUM_VEHICLES + NUM_TASKS * 2];
+        nextActionsVehicle = new HashMap<>();
+        nextActions = new HashMap<>();
     }
 
     public Solution(Solution original) {
-        nextActions = original.nextActions.clone();
+        nextActionsVehicle = (HashMap<Vehicle, MyAction>) original.nextActionsVehicle.clone();
+        nextActions = (HashMap<MyAction, MyAction>) original.nextActions.clone();
+    }
+
+    public void addNewTask(Task task){
+        //add new task at the end of first vehicle
+        Vehicle vehicle = agent.vehicles().get(0);
+
+        MyAction a = getNextAction(vehicle);
+        if(a==null){
+            setNextAction(vehicle, new MyAction(task, true));
+            MyAction pickup = getNextAction(vehicle);
+            setNextAction(pickup, new MyAction(task, false));
+        }
+        else {
+            while (getNextAction(a) != null) {
+                a = getNextAction(a);
+            }
+
+            setNextAction(a, new MyAction(task, true));
+            MyAction pickup = getNextAction(a);
+            setNextAction(pickup, new MyAction(task, false));
+        }
+
     }
 
     /**
@@ -107,7 +128,7 @@ public class Solution {
         MyAction ti = getNextAction(v1);
         if (ti.equals(t)) setNextAction(v1, getNextAction(ti));
         else {
-            while (ti != null) {
+            while (getNextAction(ti) != null) {//TODO error??
                 if (!getNextAction(ti).equals(t)) ti = getNextAction(ti);
                 else {
                     setNextAction(ti, getNextAction(getNextAction(ti)));
@@ -235,19 +256,19 @@ public class Solution {
     }
 
     public MyAction getNextAction(Vehicle vehicle) {
-        return nextActions[vehicle.id()];
+        return nextActionsVehicle.get(vehicle);
     }
 
     public MyAction getNextAction(MyAction action) {
-        return nextActions[action.getId()];
+        return nextActions.get(action);
     }
 
     public void setNextAction(Vehicle vehicle, MyAction nextAction) {
-        nextActions[vehicle.id()] = nextAction;
+        nextActionsVehicle.put(vehicle, nextAction);
     }
 
     public void setNextAction(MyAction action, MyAction nextAction) {
-        nextActions[action.getId()] = nextAction;
+        nextActions.put(action, nextAction);
     }
 
     public boolean hasActions(Vehicle v) {

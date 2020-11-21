@@ -38,6 +38,9 @@ public class AuctionMain implements AuctionBehavior {
 	private long timeout_plan;
 	private long timeout_bid;
 
+	private ArrayList<Task> assignedTasks;
+	private Solution currentSolution;
+
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
 			Agent agent) {
@@ -47,6 +50,12 @@ public class AuctionMain implements AuctionBehavior {
 		this.agent = agent;
 		this.vehicle = agent.vehicles().get(0);
 		this.currentCity = vehicle.homeCity();
+
+		Solution.topology = topology;
+		Solution.agent = agent;
+
+		this.assignedTasks = new ArrayList<>();
+		this.currentSolution = new Solution();
 
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
@@ -65,13 +74,27 @@ public class AuctionMain implements AuctionBehavior {
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 		if (winner == agent.id()) {
+			System.out.println("task "+previous.id + " received");
+			assignedTasks.add(previous);
+			currentSolution.addNewTask(previous);
+			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.5);
+			currentSolution.printActions();
+			System.out.println();
+
 			currentCity = previous.deliveryCity;
 		}
 	}
-	
+
 	@Override
 	public Long askPrice(Task task) {
+		System.out.println("Bid for " + task + ":");
+		System.out.println("Our cost estimate:" +ownCostEstimation(task));
 
+		//TODO
+		return dummyAskPrice(task);
+	}
+
+	public Long dummyAskPrice(Task task) {
 		if (vehicle.capacity() < task.weight)
 			return null;
 
@@ -84,30 +107,46 @@ public class AuctionMain implements AuctionBehavior {
 		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
 		double bid = ratio * marginalCost;
 
-		System.out.println("main agent bid " + Math.round(bid) + " for " + task);
+		System.out.println("main agent bid " + Math.round(bid));
 		return (long) Math.round(bid);
 	}
 
+	public double ownCostEstimation(Task additionalTask){
+		ArrayList<Task> newTaskList = new ArrayList<>(assignedTasks);
+		newTaskList.add(additionalTask);
+		Solution newSolution = new Solution(currentSolution);
+		newSolution.addNewTask(additionalTask);
+		double newCost = optimizeSolution(newSolution, timeout_bid*0.5).computeCost();
+		return newCost - currentSolution.computeCost();
+	}
+
+	public double opponentCostEstimation(){
+		//TODO
+		return 0.0;
+	}
+
+
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-		
-		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
+		System.out.println("Initial:");
+		Solution best = optimizeSolution(currentSolution, timeout_plan);
+
+		System.out.println("Solution:");
+		List<Plan> plans = best.convertToPlans();
+		best.printActions();
+		System.out.println(best.computeCost());
+
+		return plans;
+	}
+
+	public Solution optimizeSolution(Solution initialSolution, double timeout) {
 		long time_start = System.currentTimeMillis();
-
-		//TODO fix this line for efficiency
-		Solution.NUM_TASKS = tasks.stream().mapToInt(task->task.id).max().orElseThrow() + 1;
-
-		Solution.NUM_VEHICLES = vehicles.size();
-		Solution.topology = topology;
-		Solution.agent = agent;
 
 		Solution best = null;
 		double bestCost = Double.POSITIVE_INFINITY;
 
-		Solution A = selectInitialSolution(vehicles, tasks);
-		System.out.println("initial cost:" + A.computeCost());
+		Solution A = initialSolution;
 		Solution A_old;
-		A.printActions();
 		do {
 			A_old = A;
 			ArrayList<Solution> N = chooseNeighbours(A_old);
@@ -118,47 +157,38 @@ public class AuctionMain implements AuctionBehavior {
 				best = A;
 				bestCost = A.computeCost();
 			}
-		} while ((System.currentTimeMillis() - time_start) < 0.9 * timeout_plan);
+		} while ((System.currentTimeMillis() - time_start) < 0.9 * timeout);
 
-		System.out.println("Solution:");
-		List<Plan> plans = best.convertToPlans();
-		best.printActions();
-		System.out.println(best.computeCost());
-
-		long time_end = System.currentTimeMillis();
-		long duration = time_end - time_start;
-		System.out.println("The plan was generated in " + duration + " milliseconds.");
-
-		return plans;
+		return best;
 	}
 
-	private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
-		Solution solution = new Solution();
-		Vehicle biggestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
-
-		for (Vehicle potentialVehicle : vehicles) {
-			MyAction previous = null;
-			//filter the tasks evenly
-			Iterator<Task> vehicleTasks = tasks.stream().filter(task -> task.id % vehicles.size() == potentialVehicle.id()).iterator();
-			while (vehicleTasks.hasNext()) {
-				Task task = vehicleTasks.next();
-				Vehicle v;
-				if (task.weight <= potentialVehicle.capacity()) v = potentialVehicle;
-				else v = biggestVehicle;
-
-				MyAction pickup = new MyAction(task, true);
-				if (previous == null) solution.setNextAction(v, pickup);
-				else solution.setNextAction(previous, pickup);
-
-				MyAction delivery = new MyAction(task, false);
-				solution.setNextAction(pickup, delivery);
-
-				previous = delivery;
-			}
-		}
-
-		return solution;
-	}
+//	private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
+//		Solution solution = new Solution();
+//		Vehicle biggestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
+//
+//		for (Vehicle potentialVehicle : vehicles) {
+//			MyAction previous = null;
+//			//filter the tasks evenly
+//			Iterator<Task> vehicleTasks = tasks.stream().filter(task -> task.id % vehicles.size() == potentialVehicle.id()).iterator();
+//			while (vehicleTasks.hasNext()) {
+//				Task task = vehicleTasks.next();
+//				Vehicle v;
+//				if (task.weight <= potentialVehicle.capacity()) v = potentialVehicle;
+//				else v = biggestVehicle;
+//
+//				MyAction pickup = new MyAction(task, true);
+//				if (previous == null) solution.setNextAction(v, pickup);
+//				else solution.setNextAction(previous, pickup);
+//
+//				MyAction delivery = new MyAction(task, false);
+//				solution.setNextAction(pickup, delivery);
+//
+//				previous = delivery;
+//			}
+//		}
+//
+//		return solution;
+//	}
 
 	private ArrayList<Solution> chooseNeighbours(Solution A_old) {
 		ArrayList<Solution> neighbours = new ArrayList<>();

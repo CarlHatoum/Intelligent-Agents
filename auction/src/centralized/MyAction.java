@@ -32,12 +32,6 @@ public class MyAction {
         } else return task.deliveryCity;
     }
 
-    public int getId() {
-        if (isPickup()) {
-            return Solution.NUM_VEHICLES + task.id;
-        } else return Solution.NUM_VEHICLES + Solution.NUM_TASKS + task.id;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
