@@ -77,7 +77,7 @@ public class AuctionMain implements AuctionBehavior {
 			System.out.println("task "+previous.id + " received");
 			assignedTasks.add(previous);
 			currentSolution.addNewTask(previous);
-			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.5);
+			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.2);
 			currentSolution.printActions();
 			System.out.println();
 
@@ -88,7 +88,10 @@ public class AuctionMain implements AuctionBehavior {
 	@Override
 	public Long askPrice(Task task) {
 		System.out.println("Bid for " + task + ":");
-		System.out.println("Our cost estimate:" +ownCostEstimation(task));
+		double ownCost = ownCostEstimation(task, timeout_bid*0.4);
+		System.out.println("Our cost estimate:" + ownCost);
+
+		double opponentCost = opponentCostEstimation(task, timeout_bid*0.4);
 
 		//TODO
 		return dummyAskPrice(task);
@@ -111,16 +114,16 @@ public class AuctionMain implements AuctionBehavior {
 		return (long) Math.round(bid);
 	}
 
-	public double ownCostEstimation(Task additionalTask){
+	public double ownCostEstimation(Task additionalTask, double timeout){
 		ArrayList<Task> newTaskList = new ArrayList<>(assignedTasks);
 		newTaskList.add(additionalTask);
 		Solution newSolution = new Solution(currentSolution);
 		newSolution.addNewTask(additionalTask);
-		double newCost = optimizeSolution(newSolution, timeout_bid*0.5).computeCost();
+		double newCost = optimizeSolution(newSolution, timeout*0.5).computeCost();
 		return newCost - currentSolution.computeCost();
 	}
 
-	public double opponentCostEstimation(){
+	public double opponentCostEstimation(Task additionalTask, double timeout){
 		//TODO
 		return 0.0;
 	}
