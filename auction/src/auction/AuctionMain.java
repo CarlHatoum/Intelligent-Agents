@@ -85,11 +85,6 @@ public class AuctionMain implements AuctionBehavior {
 			currentSolution.addNewTask(previous);
 			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.2);
 			currentSolution.printActions();
-<<<<<<< HEAD
-
-=======
-			System.out.println();
->>>>>>> 4d583f45a257eaaf3deb79148889f2b6be560103
 			currentCity = previous.deliveryCity;
 		}
 		System.out.println();
@@ -202,6 +197,7 @@ public class AuctionMain implements AuctionBehavior {
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		System.out.println("Initial:");
+		currentSolution.printActions();
 		Solution best = optimizeSolution(currentSolution, timeout_plan);
 
 		System.out.println("Solution:");
