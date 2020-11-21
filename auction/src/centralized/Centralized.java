@@ -155,7 +155,7 @@ public class Centralized implements CentralizedBehavior {
         List<Vehicle> randomVehicles = new ArrayList<>(agent.vehicles());
         Collections.shuffle(randomVehicles);
 
-        Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow();
+        Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow(null);
 
         randomVehicles.remove(vi);
         for (Task t : A_old.getTasks(vi)) {
