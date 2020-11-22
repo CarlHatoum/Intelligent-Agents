@@ -130,7 +130,7 @@ public class DummyAgent implements AuctionBehavior {
 
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-        Solution best = optimizeSolution(currentSolution, timeout_plan);
+        Solution best = optimizeSolution(currentSolution, timeout_plan*0.8);
         List<Plan> plans = best.convertToPlans();
         return plans;
     }
@@ -149,7 +149,7 @@ public class DummyAgent implements AuctionBehavior {
                 best = A;
                 bestCost = A.computeCost();
             }
-        } while ((System.currentTimeMillis() - time_start) < 0.9 * timeout);
+        } while ((System.currentTimeMillis() - time_start) < 0.8 * timeout);
 
         return best;
     }

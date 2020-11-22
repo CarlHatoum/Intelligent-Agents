@@ -34,7 +34,7 @@ public class AuctionMain implements AuctionBehavior {
     private double p = .7;
     private long timeout_plan;
     private long timeout_bid;
-    private double discount_factor = 1;
+    private double discount_factor = 0.5;
 
     private Solution currentSolution;
     private Solution opponentSolution;
@@ -96,7 +96,7 @@ public class AuctionMain implements AuctionBehavior {
             currentSolution = optimizeSolution(currentSolution, timeout_bid * 0.2);
 
             //reduce discount factor by 20%
-            discount_factor *= 0.8;
+            discount_factor *= 0.5;
         } else {
             // add the new task to the solution and optimize
             opponentSolution.addNewTask(previous);
@@ -119,7 +119,7 @@ public class AuctionMain implements AuctionBehavior {
     public void improveUncertaintyFactor(long opponentBid) {
         double r = opponentBid / previousOpponentCostPrediction;
         if (previousOpponentCostPrediction == 0) return;
-        double alpha = 0.5;
+        double alpha = 0.2;
         uncertainty_factor = alpha * r + (1 - alpha) * uncertainty_factor;
         System.out.println("new factor:" + uncertainty_factor);
     }
@@ -164,8 +164,8 @@ public class AuctionMain implements AuctionBehavior {
 
         double marginalCost = Math.max(optimizeSolution(newSolution, timeout * 0.3).computeCost() - solution.computeCost(), 0);
 
-        double futureSavings1 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 2, timeout * 0.4) - marginalCost, 0);
-        double futureSavings2 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 4, timeout * 0.4) - marginalCost, 0);
+        double futureSavings1 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 2, timeout * 0.3) - marginalCost, 0);
+        double futureSavings2 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 4, timeout * 0.3) - marginalCost, 0);
 
 //		System.out.println("marginal cost:"+marginalCost);
 //		System.out.println("savings in 2 round:"+futureSavings1);
@@ -241,7 +241,16 @@ public class AuctionMain implements AuctionBehavior {
         System.out.println("Solution:");
         List<Plan> plans = best.convertToPlans();
         best.printActions();
-        System.out.println(best.computeCost());
+
+        double cost = best.computeCost();
+        System.out.println("cost: " + cost);
+
+        double reward = 0;
+        for (Task task:tasks){
+            reward += task.reward;
+        }
+        System.out.println("reward: " + reward);
+        System.out.println("net gain: " + (reward - cost));
 
         return plans;
     }
