@@ -46,6 +46,7 @@ public class AuctionMain implements AuctionBehavior {
 	private Solution opponentSolution;
 	private ArrayList<OpponentVehicle> opponentVehicles;
 	private double uncertainty_factor = 1;
+	private long previousOpponentBidPrediction;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -87,8 +88,12 @@ public class AuctionMain implements AuctionBehavior {
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
+		long opponentBid = 0;
 		for(int i = 0; i<bids.length; i++){
-			if(i!=agent.id())System.out.println("opponent bid: " + bids[i]);
+			if(i!=agent.id()){
+				opponentBid = bids[i];
+				System.out.println("opponent bid: " + opponentBid);
+			}
 		}
 
 		if (winner == agent.id()) {
@@ -110,7 +115,16 @@ public class AuctionMain implements AuctionBehavior {
 		System.out.println("opponent plan:");
 		opponentSolution.printActions();
 
+		improveUncertaintyFactor(opponentBid);
+
 		System.out.println();
+	}
+
+	public void improveUncertaintyFactor(long opponentBid){
+		//TODO
+		double learning_rate = 0.0003;
+		uncertainty_factor += learning_rate*(opponentBid-previousOpponentBidPrediction);
+		System.out.println("new factor:" + uncertainty_factor);
 	}
 
 	@Override
@@ -122,7 +136,8 @@ public class AuctionMain implements AuctionBehavior {
 		double opponentCost = opponentCostEstimation(task, timeout_bid*0.3, topology.cities());
 		System.out.println("opponent estimate: " + opponentCost);
 
-		double opponentBid = Math.max(uncertainty_factor * opponentCost, 0);
+		long opponentBid = Math.round(Math.max(uncertainty_factor * opponentCost, 0));
+		previousOpponentBidPrediction = opponentBid;
 		System.out.println("opponent bid prediction: " + opponentBid);
 		long ourBid = bid(ownCost, opponentBid, 0.5);
 		System.out.println("our bid: " + ourBid);
