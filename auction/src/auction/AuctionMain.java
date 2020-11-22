@@ -208,16 +208,19 @@ public class AuctionMain implements AuctionBehavior {
 		return futureSavings;
 	}
 	
-	public void updatePossibleCities(Task task, Long bid) {
+	public void updatePossibleCities(Task task, Long bid, double timeout) {
 		//the marginal cost is lower or equal to the bid
+		long start = System.currentTimeMillis();
+		do {
+		List <City> newCities = new ArrayList<City>();
 		for (City city : possibleOpponentCities) {
 			long totalDistance = city.distanceUnitsTo(task.pickupCity) + task.pickupCity.distanceUnitsTo(task.deliveryCity);
 			long marginalCost = totalDistance * OpponentVehicle.costPerKm ;
 			// if the bid is smaller than the marginal cost of the city, it cannot be considered as candidate
-			if (bid < marginalCost) {
-				possibleOpponentCities.remove(city);
-			}
+			if (marginalCost > bid) newCities.add(city);
 		}
+		possibleOpponentCities = newCities;
+		} while ((System.currentTimeMillis() - start) < timeout);
 	}
 
 	public double opponentCostEstimation(Task additionalTask, double timeout){
