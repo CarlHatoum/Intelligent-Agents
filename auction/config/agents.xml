@@ -8,20 +8,4 @@
 		<set class-path="bin/"/>
 		<set class-name="auction.AuctionMain"/>
 	</agent>
-
-	<agent name="auction-dummy">
-		<set class-path="bin/"/>
-		<set class-name="dummy.DummyAgent"/>
-	</agent>
-
-	<agent name="auction-better-dummy">
-		<set class-path="bin/"/>
-		<set class-name="dummy.BetterDummyAgent"/>
-	</agent>
-
-	<agent name="auction-random">
-		<set class-path="bin/"/>
-		<set class-name="template.AuctionTemplate"/>
-	</agent>
-	
 </agents>

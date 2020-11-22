@@ -138,7 +138,7 @@ public class AuctionMain implements AuctionBehavior {
 
         long opponentBid = Math.round(Math.max(uncertainty_factor * opponentCost, 0));
         System.out.println("opponent bid prediction: " + opponentBid);
-        long ourBid = bid(ownCost, opponentBid, 0.5);
+        long ourBid = bid(ownCost, opponentBid, 0.9);
         System.out.println("our bid: " + ourBid);
         return ourBid;
     }
@@ -149,7 +149,6 @@ public class AuctionMain implements AuctionBehavior {
     public Long bid(double ownCost, double opponentBid, double alpha) {
         double bid;
         // the higher the alpha, the more confident we are and consequently take risk
-        System.out.println(alpha);
         if (opponentBid < ownCost) bid = ownCost;
         else bid = ownCost + alpha * (opponentBid - ownCost);
         return Math.round(Math.max(bid, 0));
@@ -180,7 +179,7 @@ public class AuctionMain implements AuctionBehavior {
      * estimated the future savings of taking a task, by averaging over 30 runs, with a given number of new tasks
      */
     public double futureSavingsIfTaskTaken(Solution sol, Solution solIfTaskTaken, int numberOfFutureTasks, double timeout) {
-        int numberOfRuns = 30;
+        int numberOfRuns = 20;
         double futureSavings = 0;
         for (int i = 0; i < numberOfRuns; i++) {
             Solution newSol = new Solution(sol);
@@ -224,7 +223,7 @@ public class AuctionMain implements AuctionBehavior {
         double average = 0;
         for (City startingCity : possibleOpponentCities) {
             OpponentVehicle.startingCity = startingCity;
-            double estimation = costEstimation(opponentSolution, additionalTask, timeout / n);
+            double estimation = costEstimation(opponentSolution, additionalTask, timeout / n/2);
             average += estimation / n;
         }
         return average;
@@ -289,6 +288,8 @@ public class AuctionMain implements AuctionBehavior {
         Collections.shuffle(randomVehicles);
 
         Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow();
+
+        if(vi == null) return neighbours;
 
         randomVehicles.remove(vi);
         for (Task t : A_old.getTasks(vi)) {

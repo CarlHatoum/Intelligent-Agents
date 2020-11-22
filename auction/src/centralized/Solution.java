@@ -21,7 +21,8 @@ public class Solution {
         nextActions = new HashMap<>();
     }
 
-    public Solution(Solution original) {
+    @SuppressWarnings("unchecked")
+	public Solution(Solution original) {
         agentVehicles = original.agentVehicles;
         nextActionsVehicle = (HashMap<Vehicle, MyAction>) original.nextActionsVehicle.clone();
         nextActions = (HashMap<MyAction, MyAction>) original.nextActions.clone();

@@ -130,7 +130,7 @@ public class DummyAgent implements AuctionBehavior {
 
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-        Solution best = optimizeSolution(currentSolution, timeout_plan*0.8);
+        Solution best = optimizeSolution(currentSolution, timeout_plan*0.7);
         List<Plan> plans = best.convertToPlans();
         return plans;
     }
@@ -156,10 +156,12 @@ public class DummyAgent implements AuctionBehavior {
 
     private ArrayList<Solution> chooseNeighbours(Solution A_old) {
         ArrayList<Solution> neighbours = new ArrayList<>();
-        List<Vehicle> randomVehicles = new ArrayList<>(agent.vehicles());
+        List<Vehicle> randomVehicles = new ArrayList<>(A_old.getAgentVehicles());
         Collections.shuffle(randomVehicles);
 
-        Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow();
+        Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElse(null);
+
+        if(vi == null) return neighbours;
 
         randomVehicles.remove(vi);
         for (Task t : A_old.getTasks(vi)) {
