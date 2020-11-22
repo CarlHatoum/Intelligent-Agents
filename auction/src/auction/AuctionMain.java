@@ -5,13 +5,11 @@ package auction;
 import centralized.MyAction;
 import centralized.Solution;
 import logist.LogistSettings;
-import logist.Measures;
 import logist.agent.Agent;
 import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
-import logist.simulation.VehicleImpl;
 import logist.task.DefaultTaskDistribution;
 import logist.task.Task;
 import logist.task.TaskDistribution;
@@ -21,8 +19,6 @@ import logist.topology.Topology.City;
 
 import java.io.File;
 import java.util.*;
-
-import auction.OpponentVehicle;
 
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
@@ -41,14 +37,14 @@ public class AuctionMain implements AuctionBehavior {
 	private double p = .7;
 	private long timeout_plan;
 	private long timeout_bid;
-	private double discount_factor = 0.7;
+	private double discount_factor = 1;
 
 	private ArrayList<Task> assignedTasks;
 	private Solution currentSolution;
 	private Solution opponentSolution;
-	private ArrayList<OpponentVehicle> opponentVehicles;
+	private List<Vehicle> opponentVehicles;
 	private double uncertainty_factor = 1;
-	private long previousOpponentBidPrediction;
+	private double previousOpponentCostPrediction;
 	private  List<City> possibleOpponentCities;
 
 	@Override
@@ -62,11 +58,7 @@ public class AuctionMain implements AuctionBehavior {
 		this.currentCity = vehicle.homeCity();
 
 		Solution.topology = topology;
-		Solution.agent = agent;
 
-		this.assignedTasks = new ArrayList<>();
-		this.currentSolution = new Solution();
-		this.opponentSolution = new Solution();
 
 		OpponentVehicle.costPerKm = vehicle.costPerKm();
 		OpponentVehicle.capacity = vehicle.capacity();
@@ -75,6 +67,11 @@ public class AuctionMain implements AuctionBehavior {
 			opponentVehicles.add(new OpponentVehicle());
 		}
 		this.possibleOpponentCities = topology.cities();
+
+		this.assignedTasks = new ArrayList<>();
+		this.currentSolution = new Solution(agent.vehicles());
+		this.opponentSolution = new Solution(opponentVehicles);
+
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
 		try {
@@ -96,7 +93,7 @@ public class AuctionMain implements AuctionBehavior {
 			if(i!=agent.id()){
 				opponentBid = bids[i];
 				System.out.println("opponent bid: " + opponentBid);
-				updatePossibleCities(previous, opponentBid);
+				updatePossibleCities(previous, opponentBid, timeout_bid*0.1/bids.length);
 			}
 		}
 
@@ -104,14 +101,15 @@ public class AuctionMain implements AuctionBehavior {
 			System.out.println("task "+previous.id + " received");
 			assignedTasks.add(previous);
 			currentSolution.addNewTask(previous);
-			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.1);
+			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.2);
 
+			discount_factor *= 0.9;
 			//TODO remove line
 			currentCity = previous.deliveryCity;
 		}
 		else{
 			opponentSolution.addNewTask(previous);
-			opponentSolution = optimizeSolution(opponentSolution, timeout_bid*0.1);
+			opponentSolution = optimizeSolution(opponentSolution, timeout_bid*0.2);
 			System.out.println("opponent received task " + previous.id);
 		}
 		System.out.println("our plan:");
@@ -125,9 +123,9 @@ public class AuctionMain implements AuctionBehavior {
 	}
 
 	public void improveUncertaintyFactor(long opponentBid){
-		//TODO
-		double learning_rate = 0.0003;
-		uncertainty_factor += learning_rate*(opponentBid-previousOpponentBidPrediction);
+		double r = opponentBid/previousOpponentCostPrediction;
+		double alpha = 0.5;
+		uncertainty_factor = alpha * r + (1-alpha) * uncertainty_factor;
 		System.out.println("new factor:" + uncertainty_factor);
 	}
 
@@ -137,11 +135,12 @@ public class AuctionMain implements AuctionBehavior {
 		double ownCost = costEstimation(currentSolution, task, timeout_bid*0.2);
 		System.out.println("our cost estimate: " + ownCost);
 
-		double opponentCost = opponentCostEstimation(task, timeout_bid*0.3);
+		double opponentCost = opponentCostEstimation(task, timeout_bid*0.2);
 		System.out.println("opponent estimate: " + opponentCost);
 
+		previousOpponentCostPrediction = opponentCost;
+
 		long opponentBid = Math.round(Math.max(uncertainty_factor * opponentCost, 0));
-		previousOpponentBidPrediction = opponentBid;
 		System.out.println("opponent bid prediction: " + opponentBid);
 		long ourBid = bid(ownCost, opponentBid);
 		System.out.println("our bid: " + ourBid);
@@ -154,21 +153,21 @@ public class AuctionMain implements AuctionBehavior {
 		double bid;
 		double alpha;	
 		if (possibleOpponentCities.size()== 1) alpha = 0.99;
-		else alpha = 1 - (possibleOpponentCities.size() / topology.cities().size());
+		else alpha = 1 - ((double)possibleOpponentCities.size() / topology.cities().size());
 		// the higher the alpha, the more confident we are and consequently take risk
 		if (opponentCost < ownCost) bid = ownCost;
 		else bid = ownCost + alpha * (opponentCost - ownCost);
-		return (long) bid;
+		return Math.round(Math.max(bid, 0));
 	}
 
 	public double costEstimation(Solution solution, Task additionalTask, double timeout){
 		Solution newSolution = new Solution(solution);
 		newSolution.addNewTask(additionalTask);
 
-		double marginalCost = Math.max(optimizeSolution(newSolution, timeout*0.5).computeCost() - solution.computeCost(), 0);
+		double marginalCost = Math.max(optimizeSolution(newSolution, timeout*0.3).computeCost() - solution.computeCost(), 0);
 
-		double futureSavings1 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 3, timeout*0.5) - marginalCost, 0);
-		double futureSavings2 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 4, timeout*0.5) - marginalCost, 0);
+		double futureSavings1 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 3, timeout*0.4) - marginalCost, 0);
+		double futureSavings2 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 4, timeout*0.4) - marginalCost, 0);
 
 //		System.out.println("marginal cost:"+marginalCost);
 //		System.out.println("savings in 1 round:"+futureSavings1);
@@ -237,8 +236,10 @@ public class AuctionMain implements AuctionBehavior {
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		System.out.println("Initial:");
-		currentSolution.printActions();
-		Solution best = optimizeSolution(currentSolution, timeout_plan);
+
+		Solution initialSolution = selectInitialSolution(vehicles, tasks);
+		initialSolution.printActions();
+		Solution best = optimizeSolution(initialSolution, timeout_plan*0.9);
 
 		System.out.println("Solution:");
 		List<Plan> plans = best.convertToPlans();
@@ -266,7 +267,7 @@ public class AuctionMain implements AuctionBehavior {
 				best = A;
 				bestCost = A.computeCost();
 			}
-		} while ((System.currentTimeMillis() - time_start) < 0.9 * timeout);
+		} while ((System.currentTimeMillis() - time_start) < 0.8 * timeout);
 
 //		System.out.println("after "+bestCost);
 		return best;
@@ -302,11 +303,10 @@ public class AuctionMain implements AuctionBehavior {
 
 	private ArrayList<Solution> chooseNeighbours(Solution A_old) {
 		ArrayList<Solution> neighbours = new ArrayList<>();
-		List<Vehicle> randomVehicles = new ArrayList<>(agent.vehicles());
+		List<Vehicle> randomVehicles = new ArrayList<>(A_old.getAgentVehicles());
 		Collections.shuffle(randomVehicles);
 
-		Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElse(null);
-		if(vi == null) return neighbours;
+		Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow();
 
 		randomVehicles.remove(vi);
 		for (Task t : A_old.getTasks(vi)) {
@@ -375,5 +375,37 @@ public class AuctionMain implements AuctionBehavior {
 		}
 		//return random with probability 1-p
 		else return N.get(random.nextInt(N.size()));
+	}
+
+	/**
+	 * Returns the initial solution where the tasks are distributed evenly among the vehicles
+	 * if a task is too big for a vehicle, it is given to the biggest one instead
+	 */
+	private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
+		Solution solution = new Solution(vehicles);
+		Vehicle biggestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
+
+		for (Vehicle potentialVehicle : vehicles) {
+			MyAction previous = null;
+			//filter the tasks evenly
+			Iterator<Task> vehicleTasks = tasks.stream().filter(task -> task.id % vehicles.size() == potentialVehicle.id()).iterator();
+			while (vehicleTasks.hasNext()) {
+				Task task = vehicleTasks.next();
+				Vehicle v;
+				if (task.weight <= potentialVehicle.capacity()) v = potentialVehicle;
+				else v = biggestVehicle;
+
+				MyAction pickup = new MyAction(task, true);
+				if (previous == null) solution.setNextAction(v, pickup);
+				else solution.setNextAction(previous, pickup);
+
+				MyAction delivery = new MyAction(task, false);
+				solution.setNextAction(pickup, delivery);
+
+				previous = delivery;
+			}
+		}
+
+		return solution;
 	}
 }

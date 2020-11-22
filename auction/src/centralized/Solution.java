@@ -1,6 +1,5 @@
 package centralized;
 
-import logist.agent.Agent;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
@@ -11,24 +10,26 @@ import java.util.*;
 
 public class Solution {
     public static Topology topology;
-    public static Agent agent;
+    private List<Vehicle> agentVehicles;
 
     private HashMap<Vehicle, MyAction> nextActionsVehicle;
     private HashMap<MyAction, MyAction> nextActions;
 
-    public Solution() {
+    public Solution(List<Vehicle> agentVehicles) {
+        this.agentVehicles = agentVehicles;
         nextActionsVehicle = new HashMap<>();
         nextActions = new HashMap<>();
     }
 
     public Solution(Solution original) {
+        agentVehicles = original.agentVehicles;
         nextActionsVehicle = (HashMap<Vehicle, MyAction>) original.nextActionsVehicle.clone();
         nextActions = (HashMap<MyAction, MyAction>) original.nextActions.clone();
     }
 
     public void addNewTask(Task task){
         //add new task at the end of first vehicle
-        Vehicle vehicle = agent.vehicles().get(0);
+        Vehicle vehicle = agentVehicles.get(0);
 
         MyAction a = getNextAction(vehicle);
         if(a==null){
@@ -53,7 +54,7 @@ public class Solution {
      */
     public double computeCost() {
         double cost = 0;
-        for (Vehicle v : agent.vehicles()) {
+        for (Vehicle v : agentVehicles) {
             cost += computeVehicleDistance(v) * v.costPerKm();
         }
         return cost;
@@ -158,7 +159,7 @@ public class Solution {
      */
     public List<Plan> convertToPlans() {
         List<Plan> plans = new ArrayList<>();
-        for (Vehicle v : agent.vehicles()) {
+        for (Vehicle v : agentVehicles) {
             City previousCity = v.getCurrentCity();
             Plan plan = new Plan(previousCity);
             MyAction a = getNextAction(v);
@@ -191,7 +192,7 @@ public class Solution {
      * Returns whether the solution respects the capacity constraint
      */
     public boolean checkCapacity() {
-        for (Vehicle vehicle : agent.vehicles()) {
+        for (Vehicle vehicle : agentVehicles) {
             double currentCapacity = 0;
             double maxCapacity = vehicle.capacity();
 
@@ -215,7 +216,7 @@ public class Solution {
      * Returns whether the solution has pickups before deliveries
      */
     public boolean checkOrder() {
-        for (Vehicle vehicle : agent.vehicles()) {
+        for (Vehicle vehicle : agentVehicles) {
             List<Task> treated = new ArrayList<Task>();
             MyAction myaction = getNextAction(vehicle);
             while (myaction != null) {
@@ -276,7 +277,7 @@ public class Solution {
     }
 
     public void printActions() {
-        for (Vehicle v : agent.vehicles()) {
+        for (Vehicle v : agentVehicles) {
             MyAction a = getNextAction(v);
             System.out.print("vehicle " + v.id() + ": ");
             while (a != null) {
@@ -287,5 +288,7 @@ public class Solution {
         }
     }
 
-
+    public List<Vehicle> getAgentVehicles() {
+        return agentVehicles;
+    }
 }

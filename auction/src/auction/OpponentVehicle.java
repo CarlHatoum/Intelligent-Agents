@@ -43,7 +43,7 @@ public class OpponentVehicle implements Vehicle {
 
     @Override
     public Topology.City getCurrentCity() {
-        return null;
+        return startingCity;
     }
 
     @Override

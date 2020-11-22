@@ -119,7 +119,7 @@ public class Centralized implements CentralizedBehavior {
      * if a task is too big for a vehicle, it is given to the biggest one instead
      */
     private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
-        Solution solution = new Solution();
+        Solution solution = new Solution(vehicles);
         Vehicle biggestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
 
         for (Vehicle potentialVehicle : vehicles) {

@@ -54,9 +54,8 @@ public class DummyAgent implements AuctionBehavior {
 		this.currentCity = vehicle.homeCity();
 
 		Solution.topology = topology;
-		Solution.agent = agent;
 
-		this.currentSolution = new Solution();
+		this.currentSolution = new Solution(agent.vehicles());
 
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
@@ -160,7 +159,7 @@ public class DummyAgent implements AuctionBehavior {
 		List<Vehicle> randomVehicles = new ArrayList<>(agent.vehicles());
 		Collections.shuffle(randomVehicles);
 
-		Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow(null);
+		Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow();
 
 		randomVehicles.remove(vi);
 		for (Task t : A_old.getTasks(vi)) {
