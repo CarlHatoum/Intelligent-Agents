@@ -27,17 +27,16 @@ public class Solution {
         nextActions = (HashMap<MyAction, MyAction>) original.nextActions.clone();
     }
 
-    public void addNewTask(Task task){
+    public void addNewTask(Task task) {
         //add new task at the end of first vehicle
         Vehicle vehicle = agentVehicles.get(0);
 
         MyAction a = getNextAction(vehicle);
-        if(a==null){
+        if (a == null) {
             setNextAction(vehicle, new MyAction(task, true));
             MyAction pickup = getNextAction(vehicle);
             setNextAction(pickup, new MyAction(task, false));
-        }
-        else {
+        } else {
             while (getNextAction(a) != null) {
                 a = getNextAction(a);
             }
@@ -246,7 +245,7 @@ public class Solution {
     /**
      * Returns the taks of given vehicle
      */
-    public LinkedList<Task> getTasks(Vehicle v){
+    public LinkedList<Task> getTasks(Vehicle v) {
         LinkedList<Task> tasks = new LinkedList<>();
         MyAction a = getNextAction(v);
         while (a != null) {
