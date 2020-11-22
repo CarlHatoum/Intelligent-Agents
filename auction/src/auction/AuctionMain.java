@@ -175,7 +175,7 @@ public class AuctionMain implements AuctionBehavior {
 
 		double cost = marginalCost + discount_factor*futureSavings1 + discount_factor*discount_factor* futureSavings2;
 
-		return cost;
+		return Math.max(0, cost);
 	}
 
 	public double futureSavingsIfTaskTaken(Solution sol, Solution solIfTaskTaken, int numberOfFutureTasks, double timeout){
