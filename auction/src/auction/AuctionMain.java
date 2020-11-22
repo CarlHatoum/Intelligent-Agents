@@ -96,7 +96,7 @@ public class AuctionMain implements AuctionBehavior {
 			if(i!=agent.id()){
 				opponentBid = bids[i];
 				System.out.println("opponent bid: " + opponentBid);
-				updatePossibleCities(previous, opponentBid);
+				updatePossibleCities(previous, opponentBid, timeout_bid*0.01);
 			}
 		}
 
