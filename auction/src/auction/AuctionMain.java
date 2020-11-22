@@ -11,6 +11,7 @@ import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
+import logist.simulation.VehicleImpl;
 import logist.task.DefaultTaskDistribution;
 import logist.task.Task;
 import logist.task.TaskDistribution;
@@ -38,10 +39,12 @@ public class AuctionMain implements AuctionBehavior {
 	private double p = .7;
 	private long timeout_plan;
 	private long timeout_bid;
-	private double discount_factor = 0.3;
+	private double discount_factor = 0.4;
 
 	private ArrayList<Task> assignedTasks;
 	private Solution currentSolution;
+	private Solution opponentSolution;
+	private ArrayList<OpponentVehicle> opponentVehicles;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -58,6 +61,14 @@ public class AuctionMain implements AuctionBehavior {
 
 		this.assignedTasks = new ArrayList<>();
 		this.currentSolution = new Solution();
+		this.opponentSolution = new Solution();
+
+		OpponentVehicle.costPerKm = vehicle.costPerKm();
+		OpponentVehicle.capacity = vehicle.capacity();
+		opponentVehicles = new ArrayList<>();
+		for(int i = 0; i<agent.vehicles().size();i++){
+			opponentVehicles.add(new OpponentVehicle());
+		}
 
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
@@ -83,9 +94,17 @@ public class AuctionMain implements AuctionBehavior {
 			System.out.println("task "+previous.id + " received");
 			assignedTasks.add(previous);
 			currentSolution.addNewTask(previous);
-			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.2);
+			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.1);
 			currentSolution.printActions();
+
+			//TODO remove line
 			currentCity = previous.deliveryCity;
+		}
+		else{
+			opponentSolution.addNewTask(previous);
+			opponentSolution = optimizeSolution(opponentSolution, timeout_bid*0.1);
+			System.out.println("opponent received task " + previous.id);
+			opponentSolution.printActions();
 		}
 		System.out.println();
 	}
@@ -93,10 +112,11 @@ public class AuctionMain implements AuctionBehavior {
 	@Override
 	public Long askPrice(Task task) {
 		System.out.println("Bid for " + task + ":");
-		double ownCost = costEstimation(currentSolution, task, timeout_bid*0.4);
+		double ownCost = costEstimation(currentSolution, task, timeout_bid*0.2);
 		System.out.println("our cost estimate: " + ownCost);
 
-		double opponentCost = opponentCostEstimation(task, timeout_bid*0.4);
+		double opponentCost = opponentCostEstimation(task, timeout_bid*0.3, topology.cities());
+		System.out.println("opponent estimate: " + opponentCost);
 
 		//TODO
 		return dummyAskPrice(task);
@@ -128,9 +148,9 @@ public class AuctionMain implements AuctionBehavior {
 		double futureSavings1 = Math.min(futureSavingsIfTaskTaken(currentSolution, newSolution, 1, timeout*0.5) - marginalCost, 0);
 		double futureSavings2 = Math.min(futureSavingsIfTaskTaken(currentSolution, newSolution, 2, timeout*0.5) - marginalCost, 0);
 
-		System.out.println("marginal cost:"+marginalCost);
-		System.out.println("savings in 1 round:"+futureSavings1);
-		System.out.println("savings in 2 round:"+futureSavings2);
+//		System.out.println("marginal cost:"+marginalCost);
+//		System.out.println("savings in 1 round:"+futureSavings1);
+//		System.out.println("savings in 2 round:"+futureSavings2);
 
 		double cost = marginalCost + discount_factor*futureSavings1 + discount_factor*discount_factor* futureSavings2;
 
@@ -179,9 +199,15 @@ public class AuctionMain implements AuctionBehavior {
 		return possibleCities;
 	}
 
-	public double opponentCostEstimation(Task additionalTask, double timeout){
-		//TODO
-		return 0.0;
+	public double opponentCostEstimation(Task additionalTask, double timeout, List<City> possibleStartingCities){
+		int n = possibleStartingCities.size();
+		double average = 0;
+		for(City startingCity: possibleStartingCities){
+			OpponentVehicle.startingCity = startingCity;
+			double estimation = costEstimation(opponentSolution, additionalTask, timeout/n);
+			average += estimation/n;
+		}
+		return average;
 	}
 	
 	public double bid(double ownCost, double oponentCost, double alpha) {
@@ -192,7 +218,6 @@ public class AuctionMain implements AuctionBehavior {
 		return bid;
 		
 	}
-
 
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
