@@ -1,4 +1,4 @@
-package auction;
+package dummy;
 
 //the list of imports
 
@@ -25,10 +25,10 @@ import java.util.*;
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
  * handles them sequentially.
- * 
+ *
  */
 @SuppressWarnings("unused")
-public class AuctionMain implements AuctionBehavior {
+public class DummyAgent implements AuctionBehavior {
 
 	private Topology topology;
 	private DefaultTaskDistribution distribution;
@@ -41,14 +41,11 @@ public class AuctionMain implements AuctionBehavior {
 	private long timeout_bid;
 	private double discount_factor = 0.4;
 
-	private ArrayList<Task> assignedTasks;
 	private Solution currentSolution;
-	private Solution opponentSolution;
-	private ArrayList<OpponentVehicle> opponentVehicles;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
-			Agent agent) {
+					  Agent agent) {
 
 		this.topology = topology;
 		this.distribution = (DefaultTaskDistribution) distribution;
@@ -59,16 +56,7 @@ public class AuctionMain implements AuctionBehavior {
 		Solution.topology = topology;
 		Solution.agent = agent;
 
-		this.assignedTasks = new ArrayList<>();
 		this.currentSolution = new Solution();
-		this.opponentSolution = new Solution();
-
-		OpponentVehicle.costPerKm = vehicle.costPerKm();
-		OpponentVehicle.capacity = vehicle.capacity();
-		opponentVehicles = new ArrayList<>();
-		for(int i = 0; i<agent.vehicles().size();i++){
-			opponentVehicles.add(new OpponentVehicle());
-		}
 
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
@@ -86,60 +74,24 @@ public class AuctionMain implements AuctionBehavior {
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
-		for(int i = 0; i<bids.length; i++){
-			if(i!=agent.id())System.out.println("opponent bid: " + bids[i]);
-		}
-
 		if (winner == agent.id()) {
-			System.out.println("task "+previous.id + " received");
-			assignedTasks.add(previous);
 			currentSolution.addNewTask(previous);
-			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.1);
+			currentSolution = optimizeSolution(currentSolution, timeout_bid*0.3);
 
 			//TODO remove line
 			currentCity = previous.deliveryCity;
 		}
-		else{
-			opponentSolution.addNewTask(previous);
-			opponentSolution = optimizeSolution(opponentSolution, timeout_bid*0.1);
-			System.out.println("opponent received task " + previous.id);
-		}
-		System.out.println("our plan:");
-		currentSolution.printActions();
-		System.out.println("opponent plan:");
-		opponentSolution.printActions();
-
-		System.out.println();
 	}
-
-	@Override
+@Override
 	public Long askPrice(Task task) {
-		System.out.println("Bid for " + task + ":");
-		double ownCost = costEstimation(currentSolution, task, timeout_bid*0.2);
-		System.out.println("our cost estimate: " + ownCost);
-
-		double opponentCost = opponentCostEstimation(task, timeout_bid*0.3, topology.cities());
-		System.out.println("opponent estimate: " + opponentCost);
-
-		//TODO
-		return dummyAskPrice(task);
-	}
-
-	public Long dummyAskPrice(Task task) {
-		if (vehicle.capacity() < task.weight)
-			return null;
-
-		long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
-		long distanceSum = distanceTask
-				+ currentCity.distanceUnitsTo(task.pickupCity);
-		double marginalCost = Measures.unitsToKM(distanceSum
-				* vehicle.costPerKm());
+		Solution newSolution = new Solution(currentSolution);
+		newSolution.addNewTask(task);
+		double marginalCost = Math.max(optimizeSolution(newSolution, timeout_bid*0.5).computeCost() - currentSolution.computeCost(), 0);
+		System.out.println("dummy marginal cost: "+ marginalCost);
 
 		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
 		double bid = ratio * marginalCost;
-
-		System.out.println("our bid: " + Math.round(bid));
-		return (long) Math.round(bid);
+		return Math.round(bid);
 	}
 
 	public double costEstimation(Solution solution, Task additionalTask, double timeout){
@@ -150,10 +102,6 @@ public class AuctionMain implements AuctionBehavior {
 
 		double futureSavings1 = Math.min(futureSavingsIfTaskTaken(currentSolution, newSolution, 1, timeout*0.5) - marginalCost, 0);
 		double futureSavings2 = Math.min(futureSavingsIfTaskTaken(currentSolution, newSolution, 2, timeout*0.5) - marginalCost, 0);
-
-//		System.out.println("marginal cost:"+marginalCost);
-//		System.out.println("savings in 1 round:"+futureSavings1);
-//		System.out.println("savings in 2 round:"+futureSavings2);
 
 		double cost = marginalCost + discount_factor*futureSavings1 + discount_factor*discount_factor* futureSavings2;
 
@@ -175,126 +123,44 @@ public class AuctionMain implements AuctionBehavior {
 
 			double futureCost = optimizeSolution(newSol, timeout/numberOfRuns/2).computeCost();
 			double futureCostIfTaskTaken = optimizeSolution(newSoIfTaskTaken, timeout/numberOfRuns/2).computeCost() ;
-//			solIfTaskTaken.printActions();
-//			System.out.println(solIfTaskTaken.computeCost());
-//			newSoIfTaskTaken.printActions();
-//			System.out.println(newSoIfTaskTaken.computeCost());
-//
-//			System.out.println("if not taken "+futureCost);
-//			System.out.println("if taken "+futureCostIfTaskTaken);
-//			System.out.println("diff "+futureCostIfTaskTaken);
 
 			futureSavings += (futureCostIfTaskTaken - futureCost)/numberOfRuns;
 		}
 		return futureSavings;
 	}
-	
-	public List<City> possibleCities(List<City> possibleCities, Task task, Long bid) {
-		//the marginal cost is lower or equal to the bid
-		for (City city : possibleCities) {
-			long totalDistance = city.distanceUnitsTo(task.pickupCity) + task.pickupCity.distanceUnitsTo(task.deliveryCity);
-			long marginalCost = totalDistance * 5;
-			// if the bid is smaller than the marginal cost of the city, it cannot be considered as candidate
-			if (bid < marginalCost) {
-				possibleCities.remove(city);
-			}
-		}
-		return possibleCities;
-	}
-
-	public double opponentCostEstimation(Task additionalTask, double timeout, List<City> possibleStartingCities){
-		int n = possibleStartingCities.size();
-		double average = 0;
-		for(City startingCity: possibleStartingCities){
-			OpponentVehicle.startingCity = startingCity;
-			double estimation = costEstimation(opponentSolution, additionalTask, timeout/n);
-			average += estimation/n;
-		}
-		return average;
-	}
-	
-	public double bid(double ownCost, double oponentCost, double alpha) {
-		double bid;
-		if (oponentCost < ownCost) bid = 99999;
-		// the higher the alpha, the more we take risk
-		else bid = ownCost + alpha*(oponentCost - ownCost);
-		return bid;
-		
-	}
 
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-		System.out.println("Initial:");
-		currentSolution.printActions();
 		Solution best = optimizeSolution(currentSolution, timeout_plan);
-
-		System.out.println("Solution:");
 		List<Plan> plans = best.convertToPlans();
-		best.printActions();
-		System.out.println(best.computeCost());
-
 		return plans;
 	}
 
 	public Solution optimizeSolution(Solution initialSolution, double timeout) {
 		long time_start = System.currentTimeMillis();
-
 		Solution best = initialSolution;
 		double bestCost = initialSolution.computeCost();
-//		System.out.println("before "+bestCost);
 		Solution A = initialSolution;
 		Solution A_old;
 		do {
 			A_old = A;
 			ArrayList<Solution> N = chooseNeighbours(A_old);
 			A = localChoice(N, A_old);
-//            A.printActions();
-
 			if (A.computeCost() < bestCost) {
 				best = A;
 				bestCost = A.computeCost();
 			}
 		} while ((System.currentTimeMillis() - time_start) < 0.9 * timeout);
 
-//		System.out.println("after "+bestCost);
 		return best;
 	}
-
-//	private Solution selectInitialSolution(List<Vehicle> vehicles, TaskSet tasks) {
-//		Solution solution = new Solution();
-//		Vehicle biggestVehicle = vehicles.stream().max(Comparator.comparingInt(Vehicle::capacity)).get();
-//
-//		for (Vehicle potentialVehicle : vehicles) {
-//			MyAction previous = null;
-//			//filter the tasks evenly
-//			Iterator<Task> vehicleTasks = tasks.stream().filter(task -> task.id % vehicles.size() == potentialVehicle.id()).iterator();
-//			while (vehicleTasks.hasNext()) {
-//				Task task = vehicleTasks.next();
-//				Vehicle v;
-//				if (task.weight <= potentialVehicle.capacity()) v = potentialVehicle;
-//				else v = biggestVehicle;
-//
-//				MyAction pickup = new MyAction(task, true);
-//				if (previous == null) solution.setNextAction(v, pickup);
-//				else solution.setNextAction(previous, pickup);
-//
-//				MyAction delivery = new MyAction(task, false);
-//				solution.setNextAction(pickup, delivery);
-//
-//				previous = delivery;
-//			}
-//		}
-//
-//		return solution;
-//	}
 
 	private ArrayList<Solution> chooseNeighbours(Solution A_old) {
 		ArrayList<Solution> neighbours = new ArrayList<>();
 		List<Vehicle> randomVehicles = new ArrayList<>(agent.vehicles());
 		Collections.shuffle(randomVehicles);
 
-		Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElse(null);
-		if(vi == null) return neighbours;
+		Vehicle vi = randomVehicles.stream().filter(A_old::hasActions).findFirst().orElseThrow(null);
 
 		randomVehicles.remove(vi);
 		for (Task t : A_old.getTasks(vi)) {
