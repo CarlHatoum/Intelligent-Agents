@@ -22,6 +22,8 @@ import logist.topology.Topology.City;
 import java.io.File;
 import java.util.*;
 
+import auction.OpponentVehicle;
+
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
  * handles them sequentially.
@@ -47,6 +49,7 @@ public class AuctionMain implements AuctionBehavior {
 	private ArrayList<OpponentVehicle> opponentVehicles;
 	private double uncertainty_factor = 1;
 	private long previousOpponentBidPrediction;
+	private  List<City> possibleOpponentCities;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -71,7 +74,7 @@ public class AuctionMain implements AuctionBehavior {
 		for(int i = 0; i<agent.vehicles().size();i++){
 			opponentVehicles.add(new OpponentVehicle());
 		}
-
+		this.possibleOpponentCities = topology.cities();
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
 		try {
@@ -93,6 +96,7 @@ public class AuctionMain implements AuctionBehavior {
 			if(i!=agent.id()){
 				opponentBid = bids[i];
 				System.out.println("opponent bid: " + opponentBid);
+				updatePossibleCities(previous, opponentBid);
 			}
 		}
 
@@ -133,24 +137,28 @@ public class AuctionMain implements AuctionBehavior {
 		double ownCost = costEstimation(currentSolution, task, timeout_bid*0.2);
 		System.out.println("our cost estimate: " + ownCost);
 
-		double opponentCost = opponentCostEstimation(task, timeout_bid*0.3, topology.cities());
+		double opponentCost = opponentCostEstimation(task, timeout_bid*0.3);
 		System.out.println("opponent estimate: " + opponentCost);
 
 		long opponentBid = Math.round(Math.max(uncertainty_factor * opponentCost, 0));
 		previousOpponentBidPrediction = opponentBid;
 		System.out.println("opponent bid prediction: " + opponentBid);
-		long ourBid = bid(ownCost, opponentBid, 0.5);
+		long ourBid = bid(ownCost, opponentBid);
 		System.out.println("our bid: " + ourBid);
 		return ourBid;
 	}
 
 
-	public long bid(double ownCost, double opponentBid, double alpha) {
+	public Long bid(double ownCost, double opponentCost) {
+		
 		double bid;
-		if (opponentBid < ownCost) bid = ownCost;
-			// the higher the alpha, the more we take risk
-		else bid = ownCost + alpha*(opponentBid - ownCost);
-		return Math.round(Math.max(0, bid));
+		double alpha;	
+		if (possibleOpponentCities.size()== 1) alpha = 0.99;
+		else alpha = 1 - (possibleOpponentCities.size() / topology.cities().size());
+		// the higher the alpha, the more confident we are and consequently take risk
+		if (opponentCost < ownCost) bid = ownCost;
+		else bid = ownCost + alpha * (opponentCost - ownCost);
+		return (long) bid;
 	}
 
 	public double costEstimation(Solution solution, Task additionalTask, double timeout){
@@ -200,23 +208,22 @@ public class AuctionMain implements AuctionBehavior {
 		return futureSavings;
 	}
 	
-	public List<City> possibleCities(List<City> possibleCities, Task task, Long bid) {
+	public void updatePossibleCities(Task task, Long bid) {
 		//the marginal cost is lower or equal to the bid
-		for (City city : possibleCities) {
+		for (City city : possibleOpponentCities) {
 			long totalDistance = city.distanceUnitsTo(task.pickupCity) + task.pickupCity.distanceUnitsTo(task.deliveryCity);
-			long marginalCost = totalDistance * 5;
+			long marginalCost = totalDistance * OpponentVehicle.costPerKm ;
 			// if the bid is smaller than the marginal cost of the city, it cannot be considered as candidate
 			if (bid < marginalCost) {
-				possibleCities.remove(city);
+				possibleOpponentCities.remove(city);
 			}
 		}
-		return possibleCities;
 	}
 
-	public double opponentCostEstimation(Task additionalTask, double timeout, List<City> possibleStartingCities){
-		int n = possibleStartingCities.size();
+	public double opponentCostEstimation(Task additionalTask, double timeout){
+		int n = possibleOpponentCities.size();
 		double average = 0;
-		for(City startingCity: possibleStartingCities){
+		for(City startingCity: possibleOpponentCities){
 			OpponentVehicle.startingCity = startingCity;
 			double estimation = costEstimation(opponentSolution, additionalTask, timeout/n);
 			average += estimation/n;
