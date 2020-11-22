@@ -142,18 +142,14 @@ public class AuctionMain implements AuctionBehavior {
 
 		long opponentBid = Math.round(Math.max(uncertainty_factor * opponentCost, 0));
 		System.out.println("opponent bid prediction: " + opponentBid);
-		long ourBid = bid(ownCost, opponentBid);
+		long ourBid = bid(ownCost, opponentBid, 0.5);
 		System.out.println("our bid: " + ourBid);
 		return ourBid;
 	}
 
 
-	public Long bid(double ownCost, double opponentCost) {
-		
+	public Long bid(double ownCost, double opponentCost, double alpha) {
 		double bid;
-		double alpha;	
-		if (possibleOpponentCities.size()== 1) alpha = 0.99;
-		else alpha = 1 - ((double)possibleOpponentCities.size() / topology.cities().size());
 		// the higher the alpha, the more confident we are and consequently take risk
 		if (opponentCost < ownCost) bid = ownCost;
 		else bid = ownCost + alpha * (opponentCost - ownCost);
