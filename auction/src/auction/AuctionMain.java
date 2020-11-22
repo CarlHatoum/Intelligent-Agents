@@ -39,12 +39,13 @@ public class AuctionMain implements AuctionBehavior {
 	private double p = .7;
 	private long timeout_plan;
 	private long timeout_bid;
-	private double discount_factor = 0.4;
+	private double discount_factor = 0.7;
 
 	private ArrayList<Task> assignedTasks;
 	private Solution currentSolution;
 	private Solution opponentSolution;
 	private ArrayList<OpponentVehicle> opponentVehicles;
+	private double uncertainty_factor = 1;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -121,35 +122,30 @@ public class AuctionMain implements AuctionBehavior {
 		double opponentCost = opponentCostEstimation(task, timeout_bid*0.3, topology.cities());
 		System.out.println("opponent estimate: " + opponentCost);
 
-		//TODO
-		return dummyAskPrice(task);
+		double opponentBid = Math.max(uncertainty_factor * opponentCost, 0);
+		System.out.println("opponent bid prediction: " + opponentBid);
+		long ourBid = bid(ownCost, opponentBid, 0.5);
+		System.out.println("our bid: " + ourBid);
+		return ourBid;
 	}
 
-	public Long dummyAskPrice(Task task) {
-		if (vehicle.capacity() < task.weight)
-			return null;
 
-		long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
-		long distanceSum = distanceTask
-				+ currentCity.distanceUnitsTo(task.pickupCity);
-		double marginalCost = Measures.unitsToKM(distanceSum
-				* vehicle.costPerKm());
-
-		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
-		double bid = ratio * marginalCost;
-
-		System.out.println("our bid: " + Math.round(bid));
-		return (long) Math.round(bid);
+	public long bid(double ownCost, double opponentBid, double alpha) {
+		double bid;
+		if (opponentBid < ownCost) bid = ownCost;
+			// the higher the alpha, the more we take risk
+		else bid = ownCost + alpha*(opponentBid - ownCost);
+		return Math.round(Math.max(0, bid));
 	}
 
 	public double costEstimation(Solution solution, Task additionalTask, double timeout){
 		Solution newSolution = new Solution(solution);
 		newSolution.addNewTask(additionalTask);
 
-		double marginalCost = Math.max(optimizeSolution(newSolution, timeout*0.5).computeCost() - currentSolution.computeCost(), 0);
+		double marginalCost = Math.max(optimizeSolution(newSolution, timeout*0.5).computeCost() - solution.computeCost(), 0);
 
-		double futureSavings1 = Math.min(futureSavingsIfTaskTaken(currentSolution, newSolution, 1, timeout*0.5) - marginalCost, 0);
-		double futureSavings2 = Math.min(futureSavingsIfTaskTaken(currentSolution, newSolution, 2, timeout*0.5) - marginalCost, 0);
+		double futureSavings1 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 3, timeout*0.5) - marginalCost, 0);
+		double futureSavings2 = Math.min(futureSavingsIfTaskTaken(solution, newSolution, 4, timeout*0.5) - marginalCost, 0);
 
 //		System.out.println("marginal cost:"+marginalCost);
 //		System.out.println("savings in 1 round:"+futureSavings1);
@@ -211,15 +207,6 @@ public class AuctionMain implements AuctionBehavior {
 			average += estimation/n;
 		}
 		return average;
-	}
-	
-	public double bid(double ownCost, double oponentCost, double alpha) {
-		double bid;
-		if (oponentCost < ownCost) bid = 99999;
-		// the higher the alpha, the more we take risk
-		else bid = ownCost + alpha*(oponentCost - ownCost);
-		return bid;
-		
 	}
 
 	@Override
